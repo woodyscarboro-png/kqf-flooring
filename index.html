@@ -938,10 +938,12 @@ function recalc(){
 async function saveEst(){
   recalc();
   var grand=document.getElementById('t_grand')?document.getElementById('t_grand').textContent:'$0.00';
+  var fn=gv('c_first'),ln=gv('c_last');
+  if(!fn&&!ln){alert('Please enter client name before saving.');return;}
   var data={
     id:Date.now(),
     date:new Date().toLocaleDateString(),
-    client:{first:gv('c_first'),last:gv('c_last'),addr:gv('c_addr'),city:gv('c_city'),state:gv('c_state'),zip:gv('c_zip'),phone:gv('c_phone'),alt:gv('c_altphone'),email:gv('c_email'),edate:gv('c_estdate'),idate:gv('c_instdate'),notes:gv('c_notes')},
+    client:{first:fn,last:ln,addr:gv('c_addr'),city:gv('c_city'),state:gv('c_state'),zip:gv('c_zip'),phone:gv('c_phone'),alt:gv('c_altphone'),email:gv('c_email'),edate:gv('c_estdate'),idate:gv('c_instdate'),notes:gv('c_notes')},
     rooms:rooms,
     grand:grand
   };
@@ -1035,7 +1037,11 @@ function clearAll(){
   document.getElementById('c_estdate_btn').textContent='📅 Select Date';document.getElementById('c_estdate_btn').className='date-btn';
   document.getElementById('c_instdate_btn').textContent='📅 Select Date';document.getElementById('c_instdate_btn').className='date-btn';
   document.getElementById('c_estdate').value='';document.getElementById('c_instdate').value='';
-  renderRooms();recalc();go('client');toast('Cleared');
+  // Reset totals
+  var ids=['t_mat','t_inst','t_rem','t_under','t_qr','t_prep','t_grand'];
+  for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el)el.textContent='$0.00';}
+  var sb=document.getElementById('sumBody');if(sb)sb.innerHTML='<tr><td colspan="3" style="padding:20px;text-align:center;color:#5a7a9a;">No items — add rooms and select products</td></tr>';
+  renderRooms();go('client');toast('Cleared');
 }
 
 // ═══════════════════════════════
