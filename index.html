@@ -157,7 +157,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
       <td class="lbl">Product Name</td>
       <td><input type="text" id="cat_name" placeholder="e.g. Shaw Repel Berber, LVP Oak..."></td>
       <td class="lbl">Category</td>
-      <td><select id="cat_cat">
+      <td><select id="cat_cat" onchange="catCategoryChanged()">
         <option value="">— Select Category —</option>
         <optgroup label="Hard Surface">
           <option value="hardwood">Solid Hardwood</option>
@@ -215,10 +215,10 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
     <tr>
       <td class="lbl">SKU / Style #</td>
       <td><input type="text" id="cat_sku" placeholder="SKU or style number"></td>
-      <td class="lbl">Cost per Unit ($)</td>
+      <td class="lbl" id="cat_cost_lbl">Cost per Sq Ft / Lin Ft / Unit ($)</td>
       <td><input type="number" id="cat_cost" placeholder="0.00" step="0.01" min="0"></td>
     </tr>
-    <tr>
+    <tr id="cat_inst_row">
       <td class="lbl">Install Cost per Sq Ft ($)</td>
       <td><input type="number" id="cat_inst" placeholder="0.00" step="0.01" min="0"></td>
       <td class="lbl">Unit Type</td>
@@ -359,6 +359,27 @@ var UNDER_TILE=['u_cement','u_ditra','u_liquid'];
 var UNDER_VINYL=['u_luan','u_liquid','u_patch','u_leveler'];
 var ALL_PRODUCT_CATS=HARD_SURFACE_CATS.concat(CARPET_CATS).concat(TILE_CATS).concat(VINYL_CATS);
 var ALL_REM_CATS=['rem_carpet','rem_hardwood','rem_glued','rem_tile','rem_tile_cement','rem_vinyl','rem_laminate'];
+var REMOVAL_CATS=['rem_carpet','rem_hardwood','rem_glued','rem_tile','rem_tile_cement','rem_vinyl','rem_laminate','rem_qr'];
+var QR_CATS=['qr_material','qr_install','qr_paint','qr_stain'];
+
+function catCategoryChanged(){
+  var cat=document.getElementById('cat_cat').value;
+  var instRow=document.getElementById('cat_inst_row');
+  var costLbl=document.getElementById('cat_cost_lbl');
+  var isRemoval=REMOVAL_CATS.indexOf(cat)>-1;
+  var isQR=QR_CATS.indexOf(cat)>-1;
+  if(instRow) instRow.style.display=(isRemoval||isQR)?'none':'';
+  if(isRemoval){
+    if(costLbl) costLbl.textContent='Labor Cost per Sq Ft ($)';
+    sv('cat_inst','0');
+  } else if(isQR){
+    if(costLbl) costLbl.textContent='Cost per Linear Ft ($)';
+    sv('cat_inst','0');
+  } else {
+    if(costLbl) costLbl.textContent='Cost per Sq Ft / Lin Ft / Unit ($)';
+  }
+}
+
 var PREP_CATS=['u_patch','u_leveler'];
 
 var DEFAULT_CATALOG=[
