@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1024, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KQF Wholesale Flooring Estimator</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0e1117;color:#e2e8f4;font-family:Arial,sans-serif;min-height:100vh;}
+#hdr{background:#161b26;border-bottom:3px solid #e8a020;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.logo{font-weight:700;font-size:22px;color:#e8a020;}.logo b{color:#fff;}
+.sub1{font-size:11px;color:#e8a020;margin-top:3px;}
+.sub2{font-size:11px;color:#7a8ba8;margin-top:2px;}
+#sync-status{font-size:11px;color:#7a8ba8;margin-top:2px;}
+#sync-status.ok{color:#34c47c;}
+#sync-status.err{color:#e85050;}
+#tabs{display:flex;background:#161b26;border-bottom:2px solid #2a3347;overflow-x:auto;position:sticky;top:68px;z-index:199;}
+#tabs button{padding:13px 18px;font-weight:700;font-size:14px;color:#7a8ba8;border:none;border-bottom:4px solid transparent;white-space:nowrap;flex-shrink:0;background:transparent;font-family:Arial,sans-serif;cursor:pointer;}
+#tabs button.on{color:#e8a020;border-bottom-color:#e8a020;}
+#wrap{padding:20px 18px 100px;max-width:1100px;margin:0 auto;}
+.page{display:none;}.page.on{display:block;}
+h2{font-size:19px;font-weight:700;color:#e8a020;letter-spacing:2px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #2a3347;}
+h3{font-size:13px;font-weight:700;color:#e8a020;margin:14px 0 8px;padding:8px 12px;background:#161b26;border-left:4px solid #e8a020;border-radius:0 8px 8px 0;letter-spacing:1px;}
+table{width:100%;border-collapse:collapse;background:#1c2333;border-radius:10px;overflow:hidden;margin-bottom:12px;}
+table th{background:#161b26;color:#7a8ba8;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid #2a3347;}
+table td{padding:6px 8px;border-bottom:1px solid #2a3347;vertical-align:middle;}
+table tr:last-child td{border-bottom:none;}
+table tr:nth-child(even) td{background:#192030;}
+.lbl{color:#7a8ba8;font-weight:700;font-size:13px;white-space:nowrap;width:165px;}
+input,select,textarea{background:#111722;border:2px solid #2a3347;color:#e2e8f4;font-family:Arial,sans-serif;font-size:14px;padding:8px 10px;border-radius:7px;width:100%;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:#e8a020;}
+select option{background:#161b26;}
+input[type=checkbox]{width:22px;height:22px;accent-color:#e8a020;padding:0;cursor:pointer;}
+input[type=radio]{width:18px;height:18px;accent-color:#e8a020;padding:0;cursor:pointer;}
+.crow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.crow label{font-size:13px;cursor:pointer;}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.gold{color:#e8a020!important;font-weight:700!important;}
+.btn{font-family:Arial,sans-serif;font-weight:700;font-size:14px;border-radius:7px;border:none;padding:9px 16px;cursor:pointer;}
+.bgold{background:#e8a020;color:#000;}
+.bline{background:transparent;color:#e8a020;border:2px solid #e8a020;}
+.bred{background:transparent;color:#e85050;border:2px solid #e85050;font-size:12px;padding:5px 10px;}
+.bblue{background:#1a5a96;color:#fff;}
+.bnext{display:block;width:100%;margin-top:12px;padding:15px;font-size:16px;font-family:Arial,sans-serif;font-weight:700;border-radius:8px;border:none;background:#e8a020;color:#000;cursor:pointer;}
+.rcard{background:#1c2333;border:2px solid #2a3347;border-radius:10px;margin-bottom:16px;}
+.rhdr{background:#161b26;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;border-radius:10px 10px 0 0;border-bottom:1px solid #2a3347;}
+.rname{background:transparent;border:none;color:#e8a020;font-weight:700;font-size:16px;outline:none;width:240px;font-family:Arial,sans-serif;}
+.rbody{padding:12px;}
+.rsec{background:#111722;border:1px solid #2a3347;border-radius:8px;padding:10px;margin-top:8px;}
+.rsec-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#7a8ba8;margin-bottom:8px;}
+.badge{background:rgba(232,160,32,0.12);border:1px solid #e8a020;color:#e8a020;font-weight:700;font-size:12px;padding:2px 10px;border-radius:20px;}
+.tcard{background:#161b26;border:2px solid #e8a020;border-radius:10px;padding:16px;margin-top:14px;}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-top:12px;}
+.titem{background:#1c2333;border-radius:8px;padding:10px 13px;border-left:4px solid #e8a020;}
+.tlbl{font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7a8ba8;margin-bottom:3px;}
+.tval{font-weight:700;font-size:18px;color:#e8a020;}
+.tvalg{font-weight:700;font-size:24px;color:#34c47c;}
+.sitem{background:#1c2333;border:2px solid #2a3347;border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.stot{font-weight:700;font-size:18px;color:#34c47c;}
+.empty{text-align:center;padding:40px 20px;color:#7a8ba8;}
+.pill{display:inline-block;background:rgba(232,160,32,0.1);border:1px solid #e8a020;color:#e8a020;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;margin-left:6px;vertical-align:middle;}
+.date-btn{width:100%;background:#111722;border:2px solid #2a3347;color:#e2e8f4;font-family:Arial,sans-serif;font-size:14px;padding:8px 10px;border-radius:7px;text-align:left;cursor:pointer;}
+.date-btn.filled{border-color:#e8a020;color:#e8a020;font-weight:700;}
+#cal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9000;align-items:center;justify-content:center;}
+#cal-overlay.open{display:flex;}
+#cal-box{background:#fff;border-radius:12px;width:420px;max-width:96vw;box-shadow:0 8px 40px rgba(0,0,0,0.4);overflow:hidden;}
+#cal-hdr{background:#1a5a96;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;}
+#cal-title{font-weight:700;font-size:18px;color:#fff;}
+#cal-hdr button{background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:18px;font-weight:700;border-radius:6px;width:34px;height:34px;cursor:pointer;}
+#cal-body{padding:14px 16px 16px;}
+#cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cdow{text-align:center;font-size:11px;font-weight:700;color:#1a5a96;padding:5px 0;letter-spacing:1px;}
+.cday{text-align:center;padding:9px 4px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;color:#222;background:#f0f4f8;}
+.cday:hover{background:#1a5a96;color:#fff;}
+.cday.ctoday{background:#e8f0fe;color:#1a5a96;border:2px solid #1a5a96;font-weight:700;}
+.cday.csel{background:#1a5a96;color:#fff;}
+.cday.cempty{background:transparent;cursor:default;}
+.cday.cempty:hover{background:transparent;}
+#cal-close{display:block;width:100%;margin-top:10px;padding:9px;background:#e8f0fe;border:none;color:#1a5a96;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(100px);background:#34c47c;color:#000;font-weight:700;font-size:14px;padding:11px 26px;border-radius:26px;z-index:9999;transition:transform 0.25s;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+.loading{text-align:center;padding:30px;color:#7a8ba8;font-size:14px;}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div>
+    <div class="logo">KQF <b>WHOLESALE FLOORING</b></div>
+    <div class="sub1">OPEN TO THE PUBLIC · 10417 S. Main St., Archdale, NC 27263</div>
+    <div class="sub2">Woody Scarboro — Sales · 336-870-6706 · woody@keithsqf.com</div>
+    <div id="sync-status">⏳ Connecting to cloud...</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn bline" id="btnClear">Clear</button>
+    <button class="btn bgold" id="btnSave">Save</button>
+  </div>
+</div>
+
+<div id="tabs">
+  <button id="tab-client" class="on">Client</button>
+  <button id="tab-rooms">Rooms</button>
+  <button id="tab-catalog">Catalog</button>
+  <button id="tab-totals">Totals</button>
+  <button id="tab-saved">Saved</button>
+</div>
+
+<div id="wrap">
+
+<!-- CLIENT -->
+<div class="page on" id="p-client">
+  <h2>Client Information</h2>
+  <table><tbody>
+    <tr>
+      <td class="lbl">First Name</td><td><input type="text" id="c_first" placeholder="First name" autocomplete="given-name"></td>
+      <td class="lbl">Last Name</td><td><input type="text" id="c_last" placeholder="Last name" autocomplete="family-name"></td>
+    </tr>
+    <tr><td class="lbl">Street Address</td><td colspan="3"><input type="text" id="c_addr" placeholder="Street address" autocomplete="street-address"></td></tr>
+    <tr>
+      <td class="lbl">City</td><td><input type="text" id="c_city" placeholder="City" autocomplete="address-level2"></td>
+      <td class="lbl">State / ZIP</td>
+      <td><div class="two"><input type="text" id="c_state" placeholder="NC" autocomplete="address-level1"><input type="text" id="c_zip" placeholder="ZIP" autocomplete="postal-code"></div></td>
+    </tr>
+    <tr>
+      <td class="lbl">Phone</td><td><input type="tel" id="c_phone" placeholder="336-000-0000" autocomplete="tel"></td>
+      <td class="lbl">Alt Phone</td><td><input type="tel" id="c_altphone" placeholder="336-000-0000"></td>
+    </tr>
+    <tr><td class="lbl">Email</td><td colspan="3"><input type="email" id="c_email" placeholder="client@email.com" autocomplete="email"></td></tr>
+    <tr>
+      <td class="lbl">Estimate Date</td>
+      <td><button class="date-btn" id="c_estdate_btn" onclick="openCal('c_estdate')">📅 Select Date</button><input type="hidden" id="c_estdate"></td>
+      <td class="lbl">Install Date</td>
+      <td><button class="date-btn" id="c_instdate_btn" onclick="openCal('c_instdate')">📅 Select Date</button><input type="hidden" id="c_instdate"></td>
+    </tr>
+    <tr><td class="lbl">Job Notes</td><td colspan="3"><textarea id="c_notes" rows="3" placeholder="Special notes, access instructions, pets, etc." style="resize:vertical;"></textarea></td></tr>
+  </tbody></table>
+  <button class="bnext" id="btn-next-rooms">Next: Add Rooms →</button>
+</div>
+
+<!-- ROOMS -->
+<div class="page" id="p-rooms">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <h2 style="margin:0;border:none;">Rooms <span class="pill" id="rpill">0 rooms</span></h2>
+    <button class="btn bgold" style="font-size:18px;padding:8px 18px;" id="btn-add-room">+ Add Room</button>
+  </div>
+  <div id="rGrid"><div class="empty"><div style="font-size:44px;margin-bottom:10px;">🏠</div><p style="color:#e2e8f4;font-weight:700;margin-bottom:6px;">No Rooms Yet</p><p>Tap + Add Room</p></div></div>
+  <button class="bnext" id="btn-to-totals">View Totals →</button>
+</div>
+
+<!-- CATALOG -->
+<div class="page" id="p-catalog">
+  <h2>Product &amp; Services Catalog</h2>
+  <p style="color:#7a8ba8;font-size:13px;margin-bottom:14px;">All prices here are auto-recalled when products are selected per room. Edit any price inline — saves to cloud instantly.</p>
+  <h3>➕ Add Product to Catalog</h3>
+  <table><tbody>
+    <tr>
+      <td class="lbl">Product Name</td>
+      <td><input type="text" id="cat_name" placeholder="e.g. Shaw Repel Berber, LVP Oak..."></td>
+      <td class="lbl">Category</td>
+      <td><select id="cat_cat">
+        <option value="">— Select Category —</option>
+        <optgroup label="Hard Surface">
+          <option value="hardwood">Solid Hardwood</option>
+          <option value="engineered">Engineered Hardwood</option>
+          <option value="laminate">Laminate</option>
+          <option value="lvp">LVP (Luxury Vinyl Plank)</option>
+          <option value="lvt">LVT (Luxury Vinyl Tile)</option>
+        </optgroup>
+        <optgroup label="Carpet">
+          <option value="carpet">Carpet</option>
+        </optgroup>
+        <optgroup label="Tile">
+          <option value="tile">Ceramic / Porcelain Tile</option>
+        </optgroup>
+        <optgroup label="Sheet Vinyl / Glue-Down">
+          <option value="vinyl">Sheet Vinyl</option>
+          <option value="gluedown">Glue-Down LVP/LVT</option>
+        </optgroup>
+        <optgroup label="Underlayment">
+          <option value="u_foam">Foam Underlayment (Hard Surface)</option>
+          <option value="u_rubber">Rubber Underlayment (Hard Surface)</option>
+          <option value="u_cork">Cork Underlayment (Hard Surface)</option>
+          <option value="u_liquid">Liquid Underlayment</option>
+          <option value="u_rebond6">6lb Rebond Padding (Carpet)</option>
+          <option value="u_rebond8">8lb Rebond Padding (Carpet)</option>
+          <option value="u_foam_carpet">Memory Foam Padding (Carpet)</option>
+          <option value="u_moisture">Moisture Barrier Rebond (Carpet)</option>
+          <option value="u_cement">Cement Board (Tile)</option>
+          <option value="u_ditra">Ditra Membrane (Tile)</option>
+          <option value="u_luan">Luan Underlayment (Vinyl)</option>
+          <option value="u_patch">Floor Patch</option>
+          <option value="u_leveler">Self-Leveling Compound</option>
+        </optgroup>
+        <optgroup label="Removal">
+          <option value="rem_carpet">Removal — Carpet &amp; Pad &amp; Tack Strip</option>
+          <option value="rem_hardwood">Removal — Nailed Hardwood</option>
+          <option value="rem_glued">Removal — Glued Engineered / Glued LVP</option>
+          <option value="rem_tile">Removal — Ceramic / Porcelain Tile</option>
+          <option value="rem_tile_cement">Removal — Tile + Cement Board</option>
+          <option value="rem_vinyl">Removal — Sheet Vinyl</option>
+          <option value="rem_laminate">Removal — Laminate</option>
+          <option value="rem_qr">Removal — Quarter Round</option>
+        </optgroup>
+        <optgroup label="Quarter Round">
+          <option value="qr_material">Quarter Round — Material (per lin ft)</option>
+          <option value="qr_install">Quarter Round — Installation (per lin ft)</option>
+          <option value="qr_paint">Quarter Round — Paint (per lin ft)</option>
+          <option value="qr_stain">Quarter Round — Stain (per lin ft)</option>
+        </optgroup>
+        <optgroup label="Other">
+          <option value="other">Other</option>
+        </optgroup>
+      </select></td>
+    </tr>
+    <tr>
+      <td class="lbl">SKU / Style #</td>
+      <td><input type="text" id="cat_sku" placeholder="SKU or style number"></td>
+      <td class="lbl">Cost per Unit ($)</td>
+      <td><input type="number" id="cat_cost" placeholder="0.00" step="0.01" min="0"></td>
+    </tr>
+    <tr>
+      <td class="lbl">Install Cost per Sq Ft ($)</td>
+      <td><input type="number" id="cat_inst" placeholder="0.00" step="0.01" min="0"></td>
+      <td class="lbl">Unit Type</td>
+      <td><select id="cat_unit">
+        <option value="sqft">Per Sq Ft</option>
+        <option value="linft">Per Linear Ft</option>
+        <option value="bag">Per Bag</option>
+        <option value="sheet">Per Sheet</option>
+        <option value="unit">Per Unit</option>
+      </select></td>
+    </tr>
+    <tr>
+      <td colspan="4" style="padding:8px 10px;">
+        <button class="btn bgold" id="btn-add-cat">+ Add to Catalog</button>
+      </td>
+    </tr>
+  </tbody></table>
+  <h3>📋 Current Catalog</h3>
+  <div id="catList"><div class="loading">Loading catalog from cloud...</div></div>
+</div>
+
+<!-- TOTALS -->
+<div class="page" id="p-totals">
+  <h2>Estimate Summary</h2>
+  <table><thead><tr><th>Line Item</th><th>Room</th><th style="text-align:right;">Amount</th></tr></thead><tbody id="sumBody"></tbody></table>
+  <div class="tcard">
+    <div style="font-weight:700;font-size:17px;color:#e8a020;letter-spacing:2px;">Grand Total</div>
+    <div class="tgrid">
+      <div class="titem"><div class="tlbl">Materials</div><div class="tval" id="t_mat">$0.00</div></div>
+      <div class="titem"><div class="tlbl">Installation</div><div class="tval" id="t_inst">$0.00</div></div>
+      <div class="titem"><div class="tlbl">Removal</div><div class="tval" id="t_rem">$0.00</div></div>
+      <div class="titem"><div class="tlbl">Underlayment</div><div class="tval" id="t_under">$0.00</div></div>
+      <div class="titem"><div class="tlbl">Quarter Round</div><div class="tval" id="t_qr">$0.00</div></div>
+      <div class="titem"><div class="tlbl">Prep / Other</div><div class="tval" id="t_prep">$0.00</div></div>
+      <div class="titem" style="border-left-color:#34c47c;"><div class="tlbl">GRAND TOTAL</div><div class="tvalg" id="t_grand">$0.00</div></div>
+    </div>
+  </div>
+  <button class="bnext" id="btn-save-est">Save Estimate to Cloud</button>
+  <button class="bnext" style="background:transparent;color:#e8a020;border:2px solid #e8a020;margin-top:8px;" id="btn-print">Print / PDF</button>
+  <button class="bnext" style="background:#1a5a96;color:#fff;margin-top:8px;" id="btn-email">✉ Email Estimate to Client</button>
+</div>
+
+<!-- SAVED -->
+<div class="page" id="p-saved">
+  <h2>Saved Estimates</h2>
+  <div id="savedList"><div class="loading">Loading from cloud...</div></div>
+</div>
+
+</div>
+
+<!-- CALENDAR -->
+<div id="cal-overlay">
+  <div id="cal-box">
+    <div id="cal-hdr">
+      <button id="cal-prev">←</button>
+      <div id="cal-title"></div>
+      <button id="cal-next">→</button>
+    </div>
+    <div id="cal-body">
+      <div id="cal-grid"></div>
+      <button id="cal-close">Close without selecting</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════
+var SB_URL = 'https://wvpduuibhzkejuiqgiyv.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2cGR1dWliaHprZWp1aXFnaXl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1Nzk3NzEsImV4cCI6MjA5NTE1NTc3MX0.a3bA1LTdzQ9yO4iqv0CBaXbzkPCgy6WIaa__N_drTpE';
+var supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
+async function sbGet(table, opts) {
+  var q = supabase.from(table).select('*');
+  if (opts && opts.order) q = q.order(opts.order, {ascending: opts.asc !== false});
+  var r = await q;
+  if (r.error) throw new Error(r.error.message);
+  return r.data;
+}
+
+async function sbUpsert(table, data) {
+  var r = await supabase.from(table).upsert(data);
+  if (r.error) throw new Error(r.error.message);
+  return r.data;
+}
+
+async function sbDelete(table, id) {
+  var r = await supabase.from(table).delete().eq('id', id);
+  if (r.error) throw new Error(r.error.message);
+}
+
+// ═══════════════════════════════
+// STATE
+// ═══════════════════════════════
+var rooms=[], saved=[], catalog=[], rid=0;
+
+var CAT_LABELS={
+  hardwood:'Solid Hardwood',engineered:'Engineered Hardwood',laminate:'Laminate',
+  lvp:'LVP',lvt:'LVT',carpet:'Carpet',tile:'Ceramic/Porcelain Tile',
+  vinyl:'Sheet Vinyl',gluedown:'Glue-Down LVP/LVT',
+  u_foam:'Underlayment — Foam',u_rubber:'Underlayment — Rubber',u_cork:'Underlayment — Cork',
+  u_liquid:'Underlayment — Liquid',u_rebond6:'Padding — 6lb Rebond',u_rebond8:'Padding — 8lb Rebond',
+  u_foam_carpet:'Padding — Memory Foam',u_moisture:'Padding — Moisture Barrier',
+  u_cement:'Cement Board',u_ditra:'Ditra Membrane',u_luan:'Luan Underlayment',
+  u_patch:'Floor Patch',u_leveler:'Self-Leveling Compound',
+  rem_carpet:'Removal — Carpet',rem_hardwood:'Removal — Nailed HW',rem_glued:'Removal — Glued',
+  rem_tile:'Removal — Tile',rem_tile_cement:'Removal — Tile+Cement',rem_vinyl:'Removal — Vinyl',
+  rem_laminate:'Removal — Laminate',rem_qr:'Removal — Quarter Round',
+  qr_material:'QR Material',qr_install:'QR Installation',qr_paint:'QR Paint',qr_stain:'QR Stain',
+  other:'Other'
+};
+
+var HARD_SURFACE_CATS=['hardwood','engineered','laminate','lvp','lvt'];
+var CARPET_CATS=['carpet'];
+var TILE_CATS=['tile'];
+var VINYL_CATS=['vinyl','gluedown'];
+var UNDER_HARD=['u_foam','u_rubber','u_cork','u_liquid'];
+var UNDER_CARPET=['u_rebond6','u_rebond8','u_foam_carpet','u_moisture'];
+var UNDER_TILE=['u_cement','u_ditra','u_liquid'];
+var UNDER_VINYL=['u_luan','u_liquid','u_patch','u_leveler'];
+var ALL_PRODUCT_CATS=HARD_SURFACE_CATS.concat(CARPET_CATS).concat(TILE_CATS).concat(VINYL_CATS);
+var ALL_REM_CATS=['rem_carpet','rem_hardwood','rem_glued','rem_tile','rem_tile_cement','rem_vinyl','rem_laminate'];
+var PREP_CATS=['u_patch','u_leveler'];
+
+var DEFAULT_CATALOG=[
+  {id:'p1',name:'Solid Hardwood (Oak)',cat:'hardwood',sku:'',cost:4.50,inst:3.50,unit:'sqft'},
+  {id:'p2',name:'Engineered Hardwood',cat:'engineered',sku:'',cost:3.20,inst:2.80,unit:'sqft'},
+  {id:'p3',name:'Shaw Laminate',cat:'laminate',sku:'',cost:1.49,inst:1.50,unit:'sqft'},
+  {id:'p4',name:'LVP Oak Plank',cat:'lvp',sku:'',cost:2.10,inst:1.75,unit:'sqft'},
+  {id:'p5',name:'LVT Stone Look',cat:'lvt',sku:'',cost:2.40,inst:1.75,unit:'sqft'},
+  {id:'p6',name:'Berber Carpet',cat:'carpet',sku:'',cost:1.89,inst:1.00,unit:'sqft'},
+  {id:'p7',name:'Plush Carpet',cat:'carpet',sku:'',cost:2.25,inst:1.00,unit:'sqft'},
+  {id:'p8',name:'Ceramic Tile',cat:'tile',sku:'',cost:1.80,inst:4.00,unit:'sqft'},
+  {id:'p9',name:'Porcelain Tile',cat:'tile',sku:'',cost:2.50,inst:4.50,unit:'sqft'},
+  {id:'p10',name:'Sheet Vinyl',cat:'vinyl',sku:'',cost:1.20,inst:1.50,unit:'sqft'},
+  {id:'p11',name:'Glue-Down LVP',cat:'gluedown',sku:'',cost:2.30,inst:2.00,unit:'sqft'},
+  {id:'u1',name:'Foam Underlayment',cat:'u_foam',sku:'',cost:0.30,inst:0,unit:'sqft'},
+  {id:'u2',name:'Rubber Underlayment',cat:'u_rubber',sku:'',cost:0.45,inst:0,unit:'sqft'},
+  {id:'u3',name:'Cork Underlayment',cat:'u_cork',sku:'',cost:0.60,inst:0,unit:'sqft'},
+  {id:'u4',name:'Liquid Underlayment',cat:'u_liquid',sku:'',cost:0.55,inst:0,unit:'sqft'},
+  {id:'u5',name:'6lb Rebond Padding',cat:'u_rebond6',sku:'',cost:0.38,inst:0,unit:'sqft'},
+  {id:'u6',name:'8lb Rebond Padding',cat:'u_rebond8',sku:'',cost:0.52,inst:0,unit:'sqft'},
+  {id:'u7',name:'Memory Foam Padding',cat:'u_foam_carpet',sku:'',cost:0.65,inst:0,unit:'sqft'},
+  {id:'u8',name:'Moisture Barrier Rebond',cat:'u_moisture',sku:'',cost:0.48,inst:0,unit:'sqft'},
+  {id:'u9',name:'Cement Board',cat:'u_cement',sku:'',cost:0.80,inst:0.50,unit:'sqft'},
+  {id:'u10',name:'Ditra Membrane',cat:'u_ditra',sku:'',cost:1.10,inst:0.60,unit:'sqft'},
+  {id:'u11',name:'Luan Underlayment',cat:'u_luan',sku:'',cost:18.00,inst:0.20,unit:'sheet'},
+  {id:'u12',name:'Floor Patch',cat:'u_patch',sku:'',cost:22.00,inst:0,unit:'bag'},
+  {id:'u13',name:'Self-Leveling Compound',cat:'u_leveler',sku:'',cost:28.00,inst:0,unit:'bag'},
+  {id:'r1',name:'Remove Carpet + Pad + Tack',cat:'rem_carpet',sku:'',cost:0.50,inst:0,unit:'sqft'},
+  {id:'r2',name:'Remove Nailed Hardwood',cat:'rem_hardwood',sku:'',cost:1.20,inst:0,unit:'sqft'},
+  {id:'r3',name:'Remove Glued Engineered/LVP',cat:'rem_glued',sku:'',cost:1.50,inst:0,unit:'sqft'},
+  {id:'r4',name:'Remove Ceramic/Porcelain Tile',cat:'rem_tile',sku:'',cost:2.00,inst:0,unit:'sqft'},
+  {id:'r5',name:'Remove Tile + Cement Board',cat:'rem_tile_cement',sku:'',cost:2.75,inst:0,unit:'sqft'},
+  {id:'r6',name:'Remove Sheet Vinyl',cat:'rem_vinyl',sku:'',cost:0.60,inst:0,unit:'sqft'},
+  {id:'r7',name:'Remove Laminate',cat:'rem_laminate',sku:'',cost:0.75,inst:0,unit:'sqft'},
+  {id:'r8',name:'Remove Quarter Round',cat:'rem_qr',sku:'',cost:0.35,inst:0,unit:'linft'},
+  {id:'q1',name:'QR Material',cat:'qr_material',sku:'',cost:0.65,inst:0,unit:'linft'},
+  {id:'q2',name:'QR Installation',cat:'qr_install',sku:'',cost:0.50,inst:0,unit:'linft'},
+  {id:'q3',name:'QR Paint',cat:'qr_paint',sku:'',cost:0.40,inst:0,unit:'linft'},
+  {id:'q4',name:'QR Stain',cat:'qr_stain',sku:'',cost:0.45,inst:0,unit:'linft'}
+];
+
+function setStatus(msg,cls){
+  var el=document.getElementById('sync-status');
+  el.textContent=msg; el.className=cls||'';
+}
+
+// ═══════════════════════════════
+// INIT — Load from Supabase
+// ═══════════════════════════════
+async function init(){
+  try{
+    var rows = await sbGet('kqf_catalog', {order:'created_at', asc:true});
+    if(rows.length===0){
+      // Seed defaults
+      await sbUpsert('kqf_catalog', DEFAULT_CATALOG);
+      catalog = DEFAULT_CATALOG.slice();
+    } else {
+      catalog = rows;
+    }
+    setStatus('☁ Cloud connected','ok');
+    renderCatalog();
+    renderAllRoomSelects();
+  } catch(e){
+    setStatus('⚠ Offline — using local data','err');
+    catalog = DEFAULT_CATALOG.slice();
+    renderCatalog();
+  }
+  try{
+    var ests = await sbGet('kqf_estimates', {order:'created_at', asc:false});
+    saved = ests;
+  } catch(e){}
+  renderRooms();
+  renderSaved();
+}
+
+// ═══════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════
+function go(name){
+  var names=['client','rooms','catalog','totals','saved'];
+  for(var i=0;i<names.length;i++){
+    document.getElementById('tab-'+names[i]).className=(names[i]===name)?'on':'';
+    document.getElementById('p-'+names[i]).className='page'+(names[i]===name?' on':'');
+  }
+  if(name==='totals') recalc();
+  if(name==='saved')  renderSaved();
+  if(name==='catalog') renderCatalog();
+  window.scrollTo(0,0);
+}
+
+document.getElementById('tab-client').addEventListener('click',function(){go('client');});
+document.getElementById('tab-rooms').addEventListener('click',function(){go('rooms');});
+document.getElementById('tab-catalog').addEventListener('click',function(){go('catalog');});
+document.getElementById('tab-totals').addEventListener('click',function(){go('totals');});
+document.getElementById('tab-saved').addEventListener('click',function(){go('saved');});
+document.getElementById('btn-next-rooms').addEventListener('click',function(){go('rooms');});
+document.getElementById('btn-to-totals').addEventListener('click',function(){recalc();go('totals');});
+document.getElementById('btn-add-room').addEventListener('click',function(){addRoom();});
+document.getElementById('btn-add-cat').addEventListener('click',function(){addCatalogItem();});
+document.getElementById('btn-save-est').addEventListener('click',function(){saveEst();});
+document.getElementById('btn-print').addEventListener('click',function(){recalc();window.print();});
+document.getElementById('btn-email').addEventListener('click',function(){emailEst();});
+document.getElementById('btnClear').addEventListener('click',function(){clearAll();});
+document.getElementById('btnSave').addEventListener('click',function(){saveEst();});
+
+// ═══════════════════════════════
+// CALENDAR
+// ═══════════════════════════════
+var calTarget='',calYear=0,calMonth=0;
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var DOWS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function openCal(fieldId){
+  calTarget=fieldId;
+  var now=new Date(),cur=document.getElementById(fieldId).value;
+  if(cur){var p=cur.split('/');calMonth=parseInt(p[0])-1;calYear=parseInt(p[2]);}
+  else{calMonth=now.getMonth();calYear=now.getFullYear();}
+  renderCalGrid();
+  document.getElementById('cal-overlay').className='open';
+}
+function closeCal(){document.getElementById('cal-overlay').className='';}
+function renderCalGrid(){
+  var now=new Date();
+  document.getElementById('cal-title').textContent=MONTHS[calMonth]+' '+calYear;
+  var first=new Date(calYear,calMonth,1).getDay();
+  var days=new Date(calYear,calMonth+1,0).getDate();
+  var cur=document.getElementById(calTarget).value;
+  var html='';
+  for(var d=0;d<7;d++) html+='<div class="cdow">'+DOWS[d]+'</div>';
+  for(var i=0;i<first;i++) html+='<div class="cday cempty"></div>';
+  for(var d=1;d<=days;d++){
+    var ds=(calMonth+1)+'/'+d+'/'+calYear;
+    var cls='cday';
+    if(d===now.getDate()&&calMonth===now.getMonth()&&calYear===now.getFullYear()) cls+=' ctoday';
+    if(ds===cur) cls+=' csel';
+    html+='<div class="'+cls+'" onclick="pickDay('+d+')">'+d+'</div>';
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+function pickDay(d){
+  var ds=(calMonth+1)+'/'+d+'/'+calYear;
+  document.getElementById(calTarget).value=ds;
+  var btn=document.getElementById(calTarget+'_btn');
+  if(btn){btn.textContent='📅 '+ds;btn.className='date-btn filled';}
+  closeCal();
+}
+document.getElementById('cal-prev').addEventListener('click',function(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalGrid();});
+document.getElementById('cal-next').addEventListener('click',function(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalGrid();});
+document.getElementById('cal-close').addEventListener('click',closeCal);
+document.getElementById('cal-overlay').addEventListener('click',function(e){if(e.target===this)closeCal();});
+
+// ═══════════════════════════════
+// HELPERS
+// ═══════════════════════════════
+function gv(id){var e=document.getElementById(id);return e?e.value:'';}
+function sv(id,v){var e=document.getElementById(id);if(e)e.value=(v===null||v===undefined)?'':v;}
+function gcb(id){var e=document.getElementById(id);return !!(e&&e.checked);}
+function scb(id,v){var e=document.getElementById(id);if(e)e.checked=!!v;}
+function toast(msg,err){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.style.background=err?'#e85050':'#34c47c';
+  t.className='show';setTimeout(function(){t.className='';},2500);
+}
+function getCatFirst(cat){
+  for(var i=0;i<catalog.length;i++) if(catalog[i].cat===cat) return catalog[i];
+  return null;
+}
+function getCatByCats(cats){
+  return catalog.filter(function(p){return cats.indexOf(p.cat)>-1;});
+}
+
+// ═══════════════════════════════
+// CATALOG
+// ═══════════════════════════════
+async function addCatalogItem(){
+  var name=gv('cat_name').trim(),cat=gv('cat_cat'),cost=parseFloat(gv('cat_cost'))||0;
+  if(!name){alert('Enter product name.');return;}
+  if(!cat){alert('Select a category.');return;}
+  if(!cost){alert('Enter a cost.');return;}
+  var item={id:'c'+Date.now(),name:name,cat:cat,sku:gv('cat_sku'),cost:cost,inst:parseFloat(gv('cat_inst'))||0,unit:gv('cat_unit')||'sqft'};
+  try{
+    await sbUpsert('kqf_catalog',[item]);
+    catalog.unshift(item);
+    sv('cat_name','');sv('cat_sku','');sv('cat_cost','');sv('cat_inst','');
+    document.getElementById('cat_cat').value='';
+    renderCatalog();renderAllRoomSelects();
+    toast('Added to catalog!');
+  }catch(e){ toast('Save failed: '+e.message,true); }
+}
+
+async function deleteCatalogItem(id){
+  try{
+    await sbDelete('kqf_catalog',id);
+    catalog=catalog.filter(function(p){return p.id!==id;});
+    renderCatalog();renderAllRoomSelects();
+    toast('Deleted');
+  }catch(e){ toast('Delete failed',true); }
+}
+
+async function editCatalogField(id,field,val){
+  var item=null;
+  for(var i=0;i<catalog.length;i++){if(catalog[i].id===id){catalog[i][field]=parseFloat(val)||0;item=catalog[i];break;}}
+  if(!item) return;
+  try{
+    await sbUpsert('kqf_catalog',[item]);
+    toast('Saved ✓');
+  }catch(e){ toast('Save failed',true); }
+}
+
+function renderCatalog(){
+  var div=document.getElementById('catList'); if(!div) return;
+  if(!catalog.length){div.innerHTML='<div class="empty"><p>No products yet. Add one above.</p></div>';return;}
+  var groups={};
+  for(var i=0;i<catalog.length;i++){
+    var lbl=CAT_LABELS[catalog[i].cat]||catalog[i].cat;
+    if(!groups[lbl]) groups[lbl]=[];
+    groups[lbl].push(catalog[i]);
+  }
+  var CATS=['Carpet','Solid Hardwood','Engineered Hardwood','LVP','LVT','Laminate','Ceramic/Porcelain Tile','Sheet Vinyl','Glue-Down LVP/LVT','Underlayment — Foam','Underlayment — Rubber','Underlayment — Cork','Underlayment — Liquid','Padding — 6lb Rebond','Padding — 8lb Rebond','Padding — Memory Foam','Padding — Moisture Barrier','Cement Board','Ditra Membrane','Luan Underlayment','Floor Patch','Self-Leveling Compound','Removal — Carpet','Removal — Nailed HW','Removal — Glued','Removal — Tile','Removal — Tile+Cement','Removal — Vinyl','Removal — Laminate','Removal — Quarter Round','QR Material','QR Installation','QR Paint','QR Stain','Other'];
+  var html='';
+  for(var gi=0;gi<CATS.length;gi++){
+    var g=CATS[gi]; if(!groups[g]) continue;
+    html+='<h3>'+g+'</h3><table><thead><tr><th>Product</th><th>SKU</th><th>Cost ($)</th><th>Install ($)</th><th>Unit</th><th></th></tr></thead><tbody>';
+    var grp=groups[g];
+    for(var i=0;i<grp.length;i++){
+      var p=grp[i];
+      html+='<tr>'
+        +'<td style="padding:6px 8px;font-weight:600;font-size:13px;">'+p.name+'</td>'
+        +'<td style="padding:6px 8px;color:#7a8ba8;font-size:12px;">'+p.sku+'</td>'
+        +'<td style="padding:6px 8px;"><input type="number" value="'+p.cost+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'cost\',this.value)" style="background:#111722;border:1px solid #e8a020;color:#e8a020;padding:4px 6px;border-radius:5px;width:80px;font-size:13px;font-weight:700;"></td>'
+        +'<td style="padding:6px 8px;"><input type="number" value="'+p.inst+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'inst\',this.value)" style="background:#111722;border:1px solid #2a3347;color:#7a8ba8;padding:4px 6px;border-radius:5px;width:80px;font-size:13px;"></td>'
+        +'<td style="padding:6px 8px;color:#7a8ba8;font-size:12px;">'+p.unit+'</td>'
+        +'<td style="padding:6px 8px;"><button class="btn bred" onclick="deleteCatalogItem(\''+p.id+'\')">✕</button></td>'
+        +'</tr>';
+    }
+    html+='</tbody></table>';
+  }
+  div.innerHTML=html;
+}
+
+// ═══════════════════════════════
+// ROOMS
+// ═══════════════════════════════
+function addRoom(){
+  rid++;
+  rooms.unshift({id:rid,name:'',w:'',l:'',sf:'',csf:'',productId:'',product:'',underlaymentId:'',underlayment:'',removalId:'',floorRemoval:false,removalQR:false,qrInstall:false,qrFinish:'',prepId:'',prepQty:1,subfloorRepair:false,subfloorCost:'',notes:''});
+  renderRooms();
+}
+function removeRoom(id){
+  rooms=rooms.filter(function(r){return r.id!==id;});
+  renderRooms();recalc();
+}
+function setR(id,f,v){for(var i=0;i<rooms.length;i++){if(rooms[i].id===id){rooms[i][f]=v;break;}}}
+function getR(id){for(var i=0;i<rooms.length;i++){if(rooms[i].id===id)return rooms[i];}return null;}
+
+function calcRoomSF(id){
+  var r=getR(id);if(!r)return;
+  var w=parseFloat(r.w)||0,l=parseFloat(r.l)||0;
+  r.sf=(w&&l)?String(Math.round(w*l*100)/100):'';
+  var el=document.getElementById('sf_'+id);if(el)el.value=r.sf;
+  updateRoomBadge(id);recalc();
+}
+function updateRoomBadge(id){
+  var r=getR(id);if(!r)return;
+  var sf=parseFloat(r.sf)||0, csf=parseFloat(r.csf)||0;
+  var b=document.getElementById('badge_'+id);
+  if(b) b.textContent=(sf+csf).toFixed(1)+' sq ft total';
+}
+function calcPerim(r){
+  var w=parseFloat(r.w)||0,l=parseFloat(r.l)||0;
+  return (w&&l)?Math.round((2*w+2*l)*10)/10:0;
+}
+
+function getUnderCats(prodCat){
+  if(HARD_SURFACE_CATS.indexOf(prodCat)>-1) return UNDER_HARD;
+  if(CARPET_CATS.indexOf(prodCat)>-1) return UNDER_CARPET;
+  if(TILE_CATS.indexOf(prodCat)>-1) return UNDER_TILE;
+  if(VINYL_CATS.indexOf(prodCat)>-1) return UNDER_VINYL;
+  return [];
+}
+
+function productSelected(id, prodId){
+  var r=getR(id);if(!r)return;
+  r.productId=prodId;
+  var p=null;for(var i=0;i<catalog.length;i++){if(catalog[i].id===prodId){p=catalog[i];break;}}
+  if(p)r.product=p.name;
+  renderUnderDropdown(id);recalc();
+}
+function underlaymentSelected(id,uid){
+  var r=getR(id);if(!r)return;
+  r.underlaymentId=uid;
+  recalc();
+}
+function removalSelected(id,remId){var r=getR(id);if(!r)return;r.removalId=remId;recalc();}
+function prepSelected(id,prepId){var r=getR(id);if(!r)return;r.prepId=prepId;recalc();}
+
+function renderUnderDropdown(id){
+  var r=getR(id);if(!r)return;
+  var sel=document.getElementById('under_'+id);if(!sel)return;
+  var prodCat='';
+  for(var i=0;i<catalog.length;i++){if(catalog[i].id===r.productId){prodCat=catalog[i].cat;break;}}
+  var underCats=getUnderCats(prodCat);
+  var items=getCatByCats(underCats);
+  sel.innerHTML='<option value="">— None / Not Required —</option>';
+  for(var i=0;i<items.length;i++) sel.innerHTML+='<option value="'+items[i].id+'">'+items[i].name+' ($'+items[i].cost+'/'+items[i].unit+')</option>';
+  if(r.underlaymentId) sel.value=r.underlaymentId;
+}
+function renderAllRoomSelects(){for(var i=0;i<rooms.length;i++) renderUnderDropdown(rooms[i].id);}
+
+function buildProductOpts(selectedId){
+  var html='<option value="">— Select Product —</option>';
+  var groups=[
+    {label:'── Hard Surface ──',cats:HARD_SURFACE_CATS},
+    {label:'── Carpet ──',cats:CARPET_CATS},
+    {label:'── Tile ──',cats:TILE_CATS},
+    {label:'── Sheet Vinyl / Glue-Down ──',cats:VINYL_CATS},
+  ];
+  for(var g=0;g<groups.length;g++){
+    var items=getCatByCats(groups[g].cats);
+    if(items.length){
+      html+='<option disabled>'+groups[g].label+'</option>';
+      for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>'+items[i].name+' — $'+items[i].cost+'/sqft</option>';
+    }
+  }
+  return html;
+}
+function buildRemovalOpts(selectedId){
+  var html='<option value="">— No Removal Needed —</option>';
+  var items=getCatByCats(ALL_REM_CATS);
+  for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>'+items[i].name+' — $'+items[i].cost+'/'+items[i].unit+'</option>';
+  return html;
+}
+function buildPrepOpts(selectedId){
+  var html='<option value="">— No Prep Needed —</option>';
+  var items=getCatByCats(PREP_CATS);
+  for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>'+items[i].name+' — $'+items[i].cost+'/'+items[i].unit+'</option>';
+  return html;
+}
+
+function renderRooms(){
+  var g=document.getElementById('rGrid');
+  document.getElementById('rpill').textContent=rooms.length+' room'+(rooms.length!==1?'s':'');
+  if(!rooms.length){
+    g.innerHTML='<div class="empty"><div style="font-size:44px;margin-bottom:10px;">🏠</div><p style="color:#e2e8f4;font-weight:700;margin-bottom:6px;">No Rooms Yet</p><p>Tap + Add Room</p></div>';
+    return;
+  }
+  var html='';
+  for(var i=0;i<rooms.length;i++){
+    var r=rooms[i];
+    var sf=(parseFloat(r.sf)||0)+(parseFloat(r.csf)||0);
+    var perim=calcPerim(r);
+    html+='<div class="rcard" id="rcard_'+r.id+'">';
+    html+='<div class="rhdr">'
+      +'<input class="rname" type="text" value="'+r.name.replace(/"/g,'&quot;')+'" placeholder="Room Name (e.g. Master Bedroom)" oninput="setR('+r.id+',\'name\',this.value)">'
+      +'<div style="display:flex;align-items:center;gap:8px;">'
+      +'<span class="badge" id="badge_'+r.id+'">'+(sf?sf.toFixed(1)+' sq ft total':'— sq ft')+'</span>'
+      +'<button class="btn bred" onclick="removeRoom('+r.id+')">✕</button>'
+      +'</div></div>';
+    html+='<div class="rbody">';
+
+    // SQ FT
+    html+='<div class="rsec"><div class="rsec-title">Square Footage</div>'
+      +'<table style="margin:0;border-radius:0;box-shadow:none;"><tbody>'
+      +'<tr><td class="lbl" style="width:110px;">Width (ft)</td><td><input type="number" value="'+r.w+'" placeholder="0.0" step="0.1" min="0" oninput="setR('+r.id+',\'w\',this.value);calcRoomSF('+r.id+')"></td>'
+      +'<td class="lbl" style="width:110px;">Length (ft)</td><td><input type="number" value="'+r.l+'" placeholder="0.0" step="0.1" min="0" oninput="setR('+r.id+',\'l\',this.value);calcRoomSF('+r.id+')"></td></tr>'
+      +'<tr><td class="lbl">Room Sq Ft</td><td><input type="number" id="sf_'+r.id+'" value="'+r.sf+'" placeholder="Auto or enter" step="0.1" min="0" oninput="setR('+r.id+',\'sf\',this.value);updateRoomBadge('+r.id+');recalc()" class="gold"></td>'
+      +'<td class="lbl">Closet Sq Ft</td><td><input type="number" value="'+r.csf+'" placeholder="0.0" step="0.1" min="0" oninput="setR('+r.id+',\'csf\',this.value);updateRoomBadge('+r.id+');recalc()"></td></tr>'
+      +'</tbody></table></div>';
+
+    // PRODUCT
+    html+='<div class="rsec"><div class="rsec-title">Flooring Product</div>'
+      +'<select onchange="productSelected('+r.id+',this.value)">'+buildProductOpts(r.productId)+'</select></div>';
+
+    // UNDERLAYMENT
+    html+='<div class="rsec"><div class="rsec-title">Underlayment / Padding (auto-filtered by product type)</div>'
+      +'<select id="under_'+r.id+'" onchange="underlaymentSelected('+r.id+',this.value)"><option value="">— None / Not Required —</option></select></div>';
+
+    // REMOVAL
+    html+='<div class="rsec"><div class="rsec-title">Existing Floor Removal</div>'
+      +'<div class="crow" style="margin-bottom:8px;"><input type="checkbox" id="flrem_'+r.id+'"'+(r.floorRemoval?' checked':'')
+      +' onchange="setR('+r.id+',\'floorRemoval\',this.checked)"><label for="flrem_'+r.id+'">Remove existing floor</label></div>'
+      +'<select onchange="removalSelected('+r.id+',this.value)">'+buildRemovalOpts(r.removalId)+'</select>'
+      +'<div class="crow" style="margin-top:8px;"><input type="checkbox" id="qrrem_'+r.id+'"'+(r.removalQR?' checked':'')
+      +' onchange="setR('+r.id+',\'removalQR\',this.checked);recalc()"><label for="qrrem_'+r.id+'">Also remove quarter round</label></div></div>';
+
+    // FLOOR PREP
+    html+='<div class="rsec"><div class="rsec-title">Floor Preparation</div>'
+      +'<select onchange="prepSelected('+r.id+',this.value)" style="margin-bottom:8px;">'+buildPrepOpts(r.prepId)+'</select>'
+      +'<div class="crow"><span style="font-size:13px;color:#7a8ba8;">Qty / Bags:</span>'
+      +'<input type="number" value="'+r.prepQty+'" min="0" step="1" style="width:80px;" oninput="setR('+r.id+',\'prepQty\',parseFloat(this.value)||0);recalc()"></div>'
+      +'<div class="crow" style="margin-top:8px;"><input type="checkbox" id="subfr_'+r.id+'"'+(r.subfloorRepair?' checked':'')
+      +' onchange="setR('+r.id+',\'subfloorRepair\',this.checked);var d=document.getElementById(\'sfcost_'+r.id+'\');if(d)d.style.display=this.checked?\'block\':\'none\'">'
+      +'<label for="subfr_'+r.id+'">Subfloor repair needed (variable cost)</label></div>'
+      +'<div id="sfcost_'+r.id+'" style="margin-top:6px;'+(r.subfloorRepair?'':'display:none;')+'">'
+      +'<input type="number" value="'+r.subfloorCost+'" placeholder="Enter repair cost $" step="0.01" min="0" oninput="setR('+r.id+',\'subfloorCost\',this.value);recalc()"></div></div>';
+
+    // QUARTER ROUND
+    html+='<div class="rsec"><div class="rsec-title">Quarter Round</div>'
+      +'<div class="crow" style="margin-bottom:8px;"><input type="checkbox" id="qrinst_'+r.id+'"'+(r.qrInstall?' checked':'')
+      +' onchange="setR('+r.id+',\'qrInstall\',this.checked);recalc()"><label for="qrinst_'+r.id+'">Install quarter round in this room</label></div>'
+      +'<div class="crow">'
+      +'<span style="font-size:12px;color:#7a8ba8;margin-right:4px;">Finish:</span>'
+      +'<input type="radio" name="qrf_'+r.id+'" id="qrp_'+r.id+'" value="paint"'+(r.qrFinish==='paint'?' checked':'')
+      +' onchange="setR('+r.id+',\'qrFinish\',\'paint\');recalc()"><label for="qrp_'+r.id+'" style="margin-right:10px;">Paint</label>'
+      +'<input type="radio" name="qrf_'+r.id+'" id="qrs_'+r.id+'" value="stain"'+(r.qrFinish==='stain'?' checked':'')
+      +' onchange="setR('+r.id+',\'qrFinish\',\'stain\');recalc()"><label for="qrs_'+r.id+'" style="margin-right:10px;">Stain</label>'
+      +'<input type="radio" name="qrf_'+r.id+'" id="qrn_'+r.id+'" value=""'+(r.qrFinish===''?' checked':'')
+      +' onchange="setR('+r.id+',\'qrFinish\',\'\');recalc()"><label for="qrn_'+r.id+'">Unfinished</label></div>'
+      +'<div style="margin-top:6px;color:#7a8ba8;font-size:12px;">Perimeter: <strong style="color:#e8a020;">'+perim+'</strong> linear ft</div></div>';
+
+    // NOTES
+    html+='<div class="rsec"><div class="rsec-title">Room Notes</div>'
+      +'<textarea rows="2" style="resize:vertical;" placeholder="Special conditions, notes..." oninput="setR('+r.id+',\'notes\',this.value)">'+r.notes+'</textarea></div>';
+
+    html+='</div></div>';
+  }
+  g.innerHTML=html;
+  for(var i=0;i<rooms.length;i++) renderUnderDropdown(rooms[i].id);
+}
+
+// ═══════════════════════════════
+// RECALC
+// ═══════════════════════════════
+function recalc(){
+  var lines=[],totalMat=0,totalInst=0,totalRem=0,totalUnder=0,totalQR=0,totalPrep=0;
+  for(var i=0;i<rooms.length;i++){
+    var r=rooms[i];
+    var rname=r.name||('Room '+(i+1));
+    var sf=(parseFloat(r.sf)||0)+(parseFloat(r.csf)||0);
+    // Product
+    if(r.productId&&sf){
+      var prod=null;for(var j=0;j<catalog.length;j++){if(catalog[j].id===r.productId){prod=catalog[j];break;}}
+      if(prod){
+        var mc=Math.round(sf*prod.cost*100)/100;
+        var ic=Math.round(sf*prod.inst*100)/100;
+        totalMat+=mc;totalInst+=ic;
+        lines.push({label:prod.name,room:rname,amt:mc});
+        if(ic)lines.push({label:prod.name+' Install',room:rname,amt:ic});
+      }
+    }
+    // Underlayment
+    if(r.underlaymentId&&sf){
+      var up=null;for(var j=0;j<catalog.length;j++){if(catalog[j].id===r.underlaymentId){up=catalog[j];break;}}
+      if(up){var uc=Math.round(sf*up.cost*100)/100;totalUnder+=uc;lines.push({label:up.name,room:rname,amt:uc});}
+    }
+    // Removal
+    if(r.floorRemoval&&r.removalId&&sf){
+      var rp=null;for(var j=0;j<catalog.length;j++){if(catalog[j].id===r.removalId){rp=catalog[j];break;}}
+      if(rp){var rc=Math.round(sf*rp.cost*100)/100;totalRem+=rc;lines.push({label:rp.name,room:rname,amt:rc});}
+    }
+    // QR Removal
+    if(r.removalQR){
+      var perim=calcPerim(r);
+      var qrRem=getCatFirst('rem_qr');
+      if(qrRem&&perim){var qrc=Math.round(perim*qrRem.cost*100)/100;totalRem+=qrc;lines.push({label:'QR Removal',room:rname,amt:qrc});}
+    }
+    // Prep
+    if(r.prepId&&r.prepQty){
+      var pp=null;for(var j=0;j<catalog.length;j++){if(catalog[j].id===r.prepId){pp=catalog[j];break;}}
+      if(pp){var pc=Math.round((parseFloat(r.prepQty)||1)*pp.cost*100)/100;totalPrep+=pc;lines.push({label:pp.name+' x'+(r.prepQty||1),room:rname,amt:pc});}
+    }
+    // Subfloor
+    if(r.subfloorRepair&&r.subfloorCost){
+      var sc=parseFloat(r.subfloorCost)||0;totalPrep+=sc;lines.push({label:'Subfloor Repair',room:rname,amt:sc});
+    }
+    // QR Install
+    if(r.qrInstall){
+      var perim=calcPerim(r);
+      var qrMat=getCatFirst('qr_material'),qrInst=getCatFirst('qr_install');
+      var qrFin=(r.qrFinish==='paint')?getCatFirst('qr_paint'):(r.qrFinish==='stain')?getCatFirst('qr_stain'):null;
+      if(perim){
+        var qrCost=0;
+        if(qrMat)qrCost+=Math.round(perim*qrMat.cost*100)/100;
+        if(qrInst)qrCost+=Math.round(perim*qrInst.cost*100)/100;
+        if(qrFin)qrCost+=Math.round(perim*qrFin.cost*100)/100;
+        qrCost=Math.round(qrCost*100)/100;
+        totalQR+=qrCost;
+        lines.push({label:'QR '+perim+' lin ft'+(r.qrFinish?' ('+r.qrFinish+')':''),room:rname,amt:qrCost});
+      }
+    }
+  }
+  var grand=totalMat+totalInst+totalRem+totalUnder+totalQR+totalPrep;
+  function e(id,txt){var el=document.getElementById(id);if(el)el.textContent=txt;}
+  e('t_mat','$'+totalMat.toFixed(2));e('t_inst','$'+totalInst.toFixed(2));
+  e('t_rem','$'+totalRem.toFixed(2));e('t_under','$'+totalUnder.toFixed(2));
+  e('t_qr','$'+totalQR.toFixed(2));e('t_prep','$'+totalPrep.toFixed(2));
+  e('t_grand','$'+grand.toFixed(2));
+  var sb=document.getElementById('sumBody');if(!sb)return;
+  if(!lines.length){sb.innerHTML='<tr><td colspan="3" style="padding:20px;text-align:center;color:#7a8ba8;">No items — add rooms and select products</td></tr>';return;}
+  var html='';
+  for(var i=0;i<lines.length;i++){
+    html+='<tr><td style="padding:8px 10px;color:'+(i%2===0?'#e2e8f4':'#7a8ba8')+';">'+lines[i].label+'</td>'
+      +'<td style="padding:8px 10px;color:#7a8ba8;font-size:12px;">'+lines[i].room+'</td>'
+      +'<td style="text-align:right;padding:8px 10px;font-weight:700;color:#e8a020;">$'+lines[i].amt.toFixed(2)+'</td></tr>';
+  }
+  html+='<tr style="border-top:2px solid #e8a020;"><td colspan="2" style="padding:10px;font-weight:700;font-size:15px;">GRAND TOTAL</td>'
+    +'<td style="text-align:right;padding:10px;font-weight:700;font-size:19px;color:#34c47c;">$'+grand.toFixed(2)+'</td></tr>';
+  sb.innerHTML=html;
+}
+
+// ═══════════════════════════════
+// SAVE / LOAD
+// ═══════════════════════════════
+async function saveEst(){
+  recalc();
+  var grand=document.getElementById('t_grand')?document.getElementById('t_grand').textContent:'$0.00';
+  var data={
+    id:Date.now(),
+    date:new Date().toLocaleDateString(),
+    client:{first:gv('c_first'),last:gv('c_last'),addr:gv('c_addr'),city:gv('c_city'),state:gv('c_state'),zip:gv('c_zip'),phone:gv('c_phone'),alt:gv('c_altphone'),email:gv('c_email'),edate:gv('c_estdate'),idate:gv('c_instdate'),notes:gv('c_notes')},
+    rooms:rooms,
+    grand:grand
+  };
+  try{
+    await sbUpsert('kqf_estimates',[data]);
+    saved.unshift(data);
+    toast('Saved to cloud ✓');
+  }catch(e){ toast('Save failed: '+e.message,true); }
+}
+
+async function loadEst(idx){
+  var e=saved[idx],c=e.client||e.c||{};
+  sv('c_first',c.first);sv('c_last',c.last);sv('c_addr',c.addr);sv('c_city',c.city);
+  sv('c_state',c.state);sv('c_zip',c.zip);sv('c_phone',c.phone);sv('c_altphone',c.alt);
+  sv('c_email',c.email);sv('c_notes',c.notes);
+  if(c.edate){document.getElementById('c_estdate').value=c.edate;var b=document.getElementById('c_estdate_btn');if(b){b.textContent='📅 '+c.edate;b.className='date-btn filled';}}
+  if(c.idate){document.getElementById('c_instdate').value=c.idate;var b=document.getElementById('c_instdate_btn');if(b){b.textContent='📅 '+c.idate;b.className='date-btn filled';}}
+  rooms=JSON.parse(JSON.stringify(e.rooms||[]));
+  rid=0;for(var j=0;j<rooms.length;j++)if(rooms[j].id>rid)rid=rooms[j].id;
+  renderRooms();go('client');toast('Loaded');
+}
+
+async function delEst(idx){
+  var e=saved[idx];
+  try{
+    await sbDelete('kqf_estimates',e.id);
+    saved.splice(idx,1);
+    renderSaved();toast('Deleted');
+  }catch(err){toast('Delete failed',true);}
+}
+
+async function renderSaved(){
+  var list=document.getElementById('savedList');
+  try{
+    var rows=await sbGet('kqf_estimates',{order:'created_at',asc:false});
+    saved=rows;
+  }catch(e){}
+  if(!saved.length){list.innerHTML='<div class="empty"><div style="font-size:44px;margin-bottom:10px;">📋</div><p>No saved estimates yet</p></div>';return;}
+  var html='';
+  for(var i=0;i<saved.length;i++){
+    var est=saved[i],c=est.client||est.c||{};
+    html+='<div class="sitem"><div onclick="loadEst('+i+')" style="flex:1;cursor:pointer;">'
+      +'<div style="font-weight:700;font-size:15px;">'+(c.first||'—')+' '+(c.last||'')+'</div>'
+      +'<div style="color:#7a8ba8;font-size:12px;margin-top:2px;">'+(c.addr||'No address')+' · '+est.date+'</div></div>'
+      +'<div style="display:flex;align-items:center;gap:8px;"><div class="stot">'+(est.grand||'$0.00')+'</div>'
+      +'<button class="btn bred" onclick="delEst('+i+')">✕</button></div></div>';
+  }
+  list.innerHTML=html;
+}
+
+// ═══════════════════════════════
+// EMAIL
+// ═══════════════════════════════
+function emailEst(){
+  recalc();
+  var em=gv('c_email');if(!em){alert('Enter client email on the Client tab.');return;}
+  var fn=gv('c_first'),ln=gv('c_last');
+  var subj='KQF Wholesale Flooring — Estimate for '+fn+' '+ln;
+  var body='Dear '+fn+' '+ln+',\n\nThank you for choosing KQF Wholesale Flooring. Please find your estimate below.\n\n'
+    +'─────────────────────────────────\nCLIENT INFORMATION\n─────────────────────────────────\n'
+    +'Name:      '+fn+' '+ln+'\nAddress:   '+gv('c_addr')+', '+gv('c_city')+', '+gv('c_state')+' '+gv('c_zip')
+    +'\nPhone:     '+gv('c_phone')+'\nEst Date:  '+gv('c_estdate')+'\nInstall:   '+(gv('c_instdate')||'TBD')+'\n\n';
+  if(rooms.length){
+    body+='─────────────────────────────────\nROOMS\n─────────────────────────────────\n';
+    for(var i=0;i<rooms.length;i++){
+      var r=rooms[i];var sf=(parseFloat(r.sf)||0)+(parseFloat(r.csf)||0);
+      body+=(r.name||'Room '+(i+1))+':  '+sf.toFixed(1)+' sq ft\n';
+    }
+    body+='\n';
+  }
+  body+='─────────────────────────────────\nESTIMATE BREAKDOWN\n─────────────────────────────────\n';
+  var sb=document.getElementById('sumBody');
+  if(sb){var rows=sb.querySelectorAll('tr');for(var i=0;i<rows.length;i++){var cells=rows[i].querySelectorAll('td');if(cells.length>=2)body+=cells[0].textContent.trim()+' ('+cells[1].textContent.trim()+'):  '+cells[cells.length-1].textContent.trim()+'\n';}}
+  if(gv('c_notes'))body+='\nNOTES:\n'+gv('c_notes')+'\n';
+  body+='\n─────────────────────────────────\nThis estimate is valid for 30 days.\n\nKQF Wholesale Flooring — Open to the Public\n10417 S. Main St., Archdale, NC 27263\nWoody Scarboro — Sales\n336-870-6706  |  woody@keithsqf.com\n';
+  var choice=confirm('Click OK to open Gmail in browser.\nClick Cancel to use default mail app.');
+  if(choice) window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(em)+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),'_blank');
+  else window.location.href='mailto:'+encodeURIComponent(em)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+}
+
+// ═══════════════════════════════
+// CLEAR
+// ═══════════════════════════════
+function clearAll(){
+  if(!confirm('Clear all data and start new?'))return;
+  rooms=[];rid=0;
+  var ins=document.querySelectorAll('input[type=text],input[type=tel],input[type=email],input[type=number]');
+  for(var i=0;i<ins.length;i++)ins[i].value='';
+  var cbs=document.querySelectorAll('input[type=checkbox]');for(var i=0;i<cbs.length;i++)cbs[i].checked=false;
+  var sls=document.querySelectorAll('select');for(var i=0;i<sls.length;i++)sls[i].selectedIndex=0;
+  document.getElementById('c_estdate_btn').textContent='📅 Select Date';document.getElementById('c_estdate_btn').className='date-btn';
+  document.getElementById('c_instdate_btn').textContent='📅 Select Date';document.getElementById('c_instdate_btn').className='date-btn';
+  document.getElementById('c_estdate').value='';document.getElementById('c_instdate').value='';
+  renderRooms();recalc();go('client');toast('Cleared');
+}
+
+// ═══════════════════════════════
+// START
+// ═══════════════════════════════
+init();
+</script>
+</body>
+</html>
