@@ -236,6 +236,17 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
       </td>
     </tr>
   </tbody></table>
+  <h3>➕ Add Custom Section Header</h3>
+  <table><tbody>
+    <tr>
+      <td class="lbl">Header Name</td>
+      <td><input type="text" id="custom_hdr_name" placeholder="e.g. Premium Products, Specialty Items..."></td>
+      <td style="width:180px;padding:6px 8px;">
+        <button class="btn bgold" onclick="addCustomHeader()" style="width:100%;">+ Add Header</button>
+      </td>
+    </tr>
+  </tbody></table>
+
   <h3>📋 Current Catalog</h3>
   <div id="catList"><div class="loading">Loading catalog from cloud...</div></div>
 </div>
@@ -337,15 +348,15 @@ var CAT_LABELS={
   hardwood:'Solid Hardwood',engineered:'Engineered Hardwood',laminate:'Laminate',
   lvp:'LVP',lvt:'LVT',carpet:'Carpet',tile:'Ceramic/Porcelain Tile',
   vinyl:'Sheet Vinyl',gluedown:'Glue-Down LVP/LVT',
-  u_foam:'Underlayment — Foam',u_rubber:'Underlayment — Rubber',u_cork:'Underlayment — Cork',
-  u_liquid:'Underlayment — Liquid',u_rebond6:'Padding — 6lb Rebond',u_rebond8:'Padding — 8lb Rebond',
-  u_foam_carpet:'Padding — Memory Foam',u_moisture:'Padding — Moisture Barrier',
-  u_cement:'Cement Board',u_ditra:'Ditra Membrane',u_luan:'Luan Underlayment',
-  u_patch:'Floor Patch',u_leveler:'Self-Leveling Compound',
-  rem_carpet:'Removal — Carpet',rem_hardwood:'Removal — Nailed HW',rem_glued:'Removal — Glued',
-  rem_tile:'Removal — Tile',rem_tile_cement:'Removal — Tile+Cement',rem_vinyl:'Removal — Vinyl',
-  rem_laminate:'Removal — Laminate',rem_qr:'Removal — Quarter Round',
-  qr_material:'QR Material',qr_install:'QR Installation',qr_paint:'QR Paint',qr_stain:'QR Stain',
+  u_foam:'Underlayment',u_rubber:'Underlayment',u_cork:'Underlayment',
+  u_liquid:'Underlayment',u_rebond6:'Underlayment',u_rebond8:'Underlayment',
+  u_foam_carpet:'Underlayment',u_moisture:'Underlayment',
+  u_cement:'Underlayment',u_ditra:'Underlayment',u_luan:'Underlayment',
+  u_patch:'Floor Preparation',u_leveler:'Floor Preparation',
+  rem_carpet:'Removal',rem_hardwood:'Removal',rem_glued:'Removal',
+  rem_tile:'Removal',rem_tile_cement:'Removal',rem_vinyl:'Removal',
+  rem_laminate:'Removal',rem_qr:'Removal',
+  qr_material:'Quarter Round',qr_install:'Quarter Round',qr_paint:'Quarter Round',qr_stain:'Quarter Round',
   other:'Other'
 };
 
@@ -570,7 +581,23 @@ async function addCatalogItem(){
   }catch(e){ toast('Save failed: '+e.message,true); }
 }
 
-async function deleteCatalogItem(id){
+function addCustomHeader(){
+  var name=document.getElementById('custom_hdr_name').value.trim();
+  if(!name){alert('Enter a header name.');return;}
+  var catKey='custom_'+name.toLowerCase().replace(/\s+/g,'_');
+  CAT_LABELS[catKey]=name;
+  var item={id:'hdr'+Date.now(),name:'(Add products to this section)',cat:catKey,sku:'',cost:0,inst:0,unit:'sqft'};
+  sbUpsert('kqf_catalog',[item]).then(function(){
+    catalog.unshift(item);
+    document.getElementById('custom_hdr_name').value='';
+    var sel=document.getElementById('cat_cat');
+    var opt=document.createElement('option');
+    opt.value=catKey; opt.textContent=name+' (custom)';
+    sel.appendChild(opt);
+    renderCatalog();
+    toast('Header "'+name+'" added!');
+  }).catch(function(e){ toast('Save failed: '+e.message,true); });
+}
   try{
     await sbDelete('kqf_catalog',id);
     catalog=catalog.filter(function(p){return p.id!==id;});
@@ -598,26 +625,40 @@ function renderCatalog(){
     if(!groups[lbl]) groups[lbl]=[];
     groups[lbl].push(catalog[i]);
   }
-  var CATS=['Carpet','Solid Hardwood','Engineered Hardwood','LVP','LVT','Laminate','Ceramic/Porcelain Tile','Sheet Vinyl','Glue-Down LVP/LVT','Underlayment — Foam','Underlayment — Rubber','Underlayment — Cork','Underlayment — Liquid','Padding — 6lb Rebond','Padding — 8lb Rebond','Padding — Memory Foam','Padding — Moisture Barrier','Cement Board','Ditra Membrane','Luan Underlayment','Floor Patch','Self-Leveling Compound','Removal — Carpet','Removal — Nailed HW','Removal — Glued','Removal — Tile','Removal — Tile+Cement','Removal — Vinyl','Removal — Laminate','Removal — Quarter Round','QR Material','QR Installation','QR Paint','QR Stain','Other'];
-  var html='<table style="table-layout:fixed;"><colgroup><col style="width:35%"><col style="width:15%"><col style="width:14%"><col style="width:14%"><col style="width:10%"><col style="width:12%"></colgroup>'
-    +'<thead><tr><th>Product</th><th>SKU</th><th>Cost ($)</th><th>Install ($)</th><th>Unit</th><th></th></tr></thead><tbody>';
-  var currentGroup='';
-  for(var gi=0;gi<CATS.length;gi++){
-    var g=CATS[gi]; if(!groups[g]) continue;
-    html+='<tr><td colspan="6" style="padding:10px 12px 4px;background:#f0f4f8;border-bottom:none;">'
-      +'<span style="font-size:13px;font-weight:700;color:#1a5a96;text-transform:uppercase;letter-spacing:1.5px;">'+g+'</span>'
+  // Build ordered list: built-in cats first, then custom headers
+  var BUILT_IN=['Carpet','Solid Hardwood','Engineered Hardwood','LVP','LVT','Laminate','Ceramic/Porcelain Tile','Sheet Vinyl','Glue-Down LVP/LVT','Underlayment','Floor Preparation','Removal','Quarter Round','Other'];
+  var allCats=BUILT_IN.slice();
+  for(var g in groups){ if(allCats.indexOf(g)===-1) allCats.push(g); }
+
+  var html='<table style="table-layout:fixed;width:100%;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(26,90,150,0.1);">'
+    +'<colgroup><col style="width:34%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:10%"><col style="width:14%"></colgroup>'
+    +'<thead><tr style="background:#c5d9f0;">'
+    +'<th style="padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0f4c75;text-align:left;border-bottom:2px solid #0f4c75;">Product</th>'
+    +'<th style="padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0f4c75;text-align:left;border-bottom:2px solid #0f4c75;">SKU</th>'
+    +'<th style="padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0f4c75;text-align:left;border-bottom:2px solid #0f4c75;">Cost ($)</th>'
+    +'<th style="padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0f4c75;text-align:left;border-bottom:2px solid #0f4c75;">Install ($)</th>'
+    +'<th style="padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0f4c75;text-align:left;border-bottom:2px solid #0f4c75;">Unit</th>'
+    +'<th style="padding:10px 12px;border-bottom:2px solid #0f4c75;"></th>'
+    +'</tr></thead><tbody>';
+
+  for(var gi=0;gi<allCats.length;gi++){
+    var g=allCats[gi]; if(!groups[g]) continue;
+    // Category header row — scheme 2 style
+    html+='<tr>'
+      +'<td colspan="6" style="padding:12px 14px 6px;background:#c5d9f0;border-top:2px solid #0f4c75;border-bottom:1px solid #a8c4e0;">'
+      +'<span style="font-size:19px;font-weight:700;color:#0f4c75;text-transform:uppercase;letter-spacing:1.5px;">'+g+'</span>'
       +'</td></tr>';
     var grp=groups[g];
     for(var i=0;i<grp.length;i++){
       var p=grp[i];
-      var rowBg=i%2===0?'#ffffff':'#f5f9ff';
+      var rowBg=i%2===0?'#ffffff':'#f0f6ff';
       html+='<tr style="background:'+rowBg+';">'
-        +'<td style="padding:8px 12px;font-size:14px;font-weight:600;color:#1a2332;">'+p.name+'</td>'
-        +'<td style="padding:8px 12px;font-size:12px;color:#5a7a9a;">'+p.sku+'</td>'
-        +'<td style="padding:8px 12px;"><input type="number" value="'+p.cost+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'cost\',this.value)" style="background:#ffffff;border:2px solid #d1e3f5;color:#1a5a96;padding:5px 8px;border-radius:5px;width:100%;font-size:13px;font-weight:700;"></td>'
-        +'<td style="padding:8px 12px;"><input type="number" value="'+p.inst+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'inst\',this.value)" style="background:#ffffff;border:2px solid #d1e3f5;color:#5a7a9a;padding:5px 8px;border-radius:5px;width:100%;font-size:13px;"></td>'
-        +'<td style="padding:8px 12px;font-size:12px;color:#5a7a9a;">'+p.unit+'</td>'
-        +'<td style="padding:8px 12px;text-align:center;"><button class="btn bred" onclick="deleteCatalogItem(\''+p.id+'\')">✕</button></td>'
+        +'<td style="padding:9px 14px;font-size:14px;font-weight:400;color:#1a2332;">'+p.name+'</td>'
+        +'<td style="padding:9px 14px;font-size:12px;color:#5a7a9a;font-weight:400;">'+p.sku+'</td>'
+        +'<td style="padding:9px 14px;"><input type="number" value="'+p.cost+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'cost\',this.value)" style="background:#ffffff;border:2px solid #c5d9f0;color:#0f4c75;padding:5px 8px;border-radius:5px;width:100%;font-size:13px;font-weight:700;"></td>'
+        +'<td style="padding:9px 14px;"><input type="number" value="'+p.inst+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'inst\',this.value)" style="background:#ffffff;border:2px solid #c5d9f0;color:#5a7a9a;padding:5px 8px;border-radius:5px;width:100%;font-size:13px;font-weight:400;"></td>'
+        +'<td style="padding:9px 14px;font-size:12px;color:#5a7a9a;font-weight:400;">'+p.unit+'</td>'
+        +'<td style="padding:9px 14px;text-align:center;"><button class="btn bred" onclick="deleteCatalogItem(\''+p.id+'\')">✕</button></td>'
         +'</tr>';
     }
   }
