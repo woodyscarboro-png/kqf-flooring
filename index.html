@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1024, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>KQF Wholesale Flooring Estimator</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0e1117;color:#e2e8f4;font-family:Arial,sans-serif;min-height:100vh;}
@@ -293,25 +292,40 @@ input[type=radio]{width:18px;height:18px;accent-color:#e8a020;padding:0;cursor:p
 // ═══════════════════════════════
 var SB_URL = 'https://wvpduuibhzkejuiqgiyv.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2cGR1dWliaHprZWp1aXFnaXl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1Nzk3NzEsImV4cCI6MjA5NTE1NTc3MX0.a3bA1LTdzQ9yO4iqv0CBaXbzkPCgy6WIaa__N_drTpE';
-var supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-async function sbGet(table, opts) {
-  var q = supabase.from(table).select('*');
-  if (opts && opts.order) q = q.order(opts.order, {ascending: opts.asc !== false});
-  var r = await q;
-  if (r.error) throw new Error(r.error.message);
-  return r.data;
+function sbHeaders(){
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + SB_KEY,
+    'Prefer': 'return=representation'
+  };
 }
 
-async function sbUpsert(table, data) {
-  var r = await supabase.from(table).upsert(data);
-  if (r.error) throw new Error(r.error.message);
-  return r.data;
+async function sbGet(table, opts){
+  var url = SB_URL + '/rest/v1/' + table + '?select=*';
+  if(opts && opts.order) url += '&order=' + opts.order + (opts.asc===false?'.desc':'.asc');
+  var r = await fetch(url, {method:'GET', headers: sbHeaders()});
+  if(!r.ok){var t=await r.text();throw new Error(t);}
+  return r.json();
 }
 
-async function sbDelete(table, id) {
-  var r = await supabase.from(table).delete().eq('id', id);
-  if (r.error) throw new Error(r.error.message);
+async function sbUpsert(table, data){
+  var r = await fetch(SB_URL + '/rest/v1/' + table, {
+    method: 'POST',
+    headers: Object.assign({}, sbHeaders(), {'Prefer': 'resolution=merge-duplicates,return=representation'}),
+    body: JSON.stringify(Array.isArray(data) ? data : [data])
+  });
+  if(!r.ok){var t=await r.text();throw new Error(t);}
+  return r.status===204?[]:r.json();
+}
+
+async function sbDelete(table, id){
+  var r = await fetch(SB_URL + '/rest/v1/' + table + '?id=eq.' + encodeURIComponent(id), {
+    method: 'DELETE',
+    headers: sbHeaders()
+  });
+  if(!r.ok){var t=await r.text();throw new Error(t);}
 }
 
 // ═══════════════════════════════
