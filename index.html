@@ -256,7 +256,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
   <h2>Estimate Summary</h2>
   <table><thead><tr><th>Line Item</th><th>Room</th><th style="text-align:right;">Amount</th></tr></thead><tbody id="sumBody"></tbody></table>
   <div class="tcard">
-    <div style="font-weight:700;font-size:17px;color:#e8a020;letter-spacing:2px;">Grand Total</div>
+    <div style="font-weight:700;font-size:17px;color:#1a5a96;letter-spacing:2px;">Grand Total</div>
     <div class="tgrid">
       <div class="titem"><div class="tlbl">Materials</div><div class="tval" id="t_mat">$0.00</div></div>
       <div class="titem"><div class="tlbl">Installation</div><div class="tval" id="t_inst">$0.00</div></div>
@@ -268,7 +268,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
     </div>
   </div>
   <button class="bnext" id="btn-save-est">Save Estimate to Cloud</button>
-  <button class="bnext" style="background:transparent;color:#e8a020;border:2px solid #e8a020;margin-top:8px;" id="btn-print">Print / PDF</button>
+  <button class="bnext" style="background:transparent;color:#1a5a96;border:2px solid #1a5a96;margin-top:8px;" id="btn-print">Print / PDF</button>
   <button class="bnext" style="background:#1a5a96;color:#fff;margin-top:8px;" id="btn-email">✉ Email Estimate to Client</button>
 </div>
 
@@ -921,12 +921,12 @@ function recalc(){
   if(!lines.length){sb.innerHTML='<tr><td colspan="3" style="padding:20px;text-align:center;color:#7a8ba8;">No items — add rooms and select products</td></tr>';return;}
   var html='';
   for(var i=0;i<lines.length;i++){
-    html+='<tr><td style="padding:8px 10px;color:'+(i%2===0?'#e2e8f4':'#7a8ba8')+';">'+lines[i].label+'</td>'
-      +'<td style="padding:8px 10px;color:#7a8ba8;font-size:12px;">'+lines[i].room+'</td>'
-      +'<td style="text-align:right;padding:8px 10px;font-weight:700;color:#e8a020;">$'+lines[i].amt.toFixed(2)+'</td></tr>';
+    html+='<tr><td style="padding:8px 10px;color:#1a2332;font-weight:500;">'+lines[i].label+'</td>'
+      +'<td style="padding:8px 10px;color:#5a7a9a;font-size:12px;">'+lines[i].room+'</td>'
+      +'<td style="text-align:right;padding:8px 10px;font-weight:700;color:#1a5a96;">$'+lines[i].amt.toFixed(2)+'</td></tr>';
   }
-  html+='<tr style="border-top:2px solid #e8a020;"><td colspan="2" style="padding:10px;font-weight:700;font-size:15px;">GRAND TOTAL</td>'
-    +'<td style="text-align:right;padding:10px;font-weight:700;font-size:19px;color:#34c47c;">$'+grand.toFixed(2)+'</td></tr>';
+  html+='<tr style="border-top:2px solid #1a5a96;background:#e8f0fe;"><td colspan="2" style="padding:10px;font-weight:700;font-size:15px;color:#1a5a96;">GRAND TOTAL</td>'
+    +'<td style="text-align:right;padding:10px;font-weight:700;font-size:19px;color:#16a34a;">$'+grand.toFixed(2)+'</td></tr>';
   sb.innerHTML=html;
 }
 
