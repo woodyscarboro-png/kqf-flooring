@@ -596,8 +596,9 @@ function addCustomHeader(){
     sel.appendChild(opt);
     renderCatalog();
     toast('Header "'+name+'" added!');
-  }).catch(function(e){ toast('Save failed: '+e.message,true); });
 }
+
+async function deleteCatalogItem(id){
   try{
     await sbDelete('kqf_catalog',id);
     catalog=catalog.filter(function(p){return p.id!==id;});
