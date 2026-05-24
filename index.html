@@ -626,6 +626,8 @@ function updateRoomBadge(id){
   var sf=parseFloat(r.sf)||0, csf=parseFloat(r.csf)||0;
   var b=document.getElementById('badge_'+id);
   if(b) b.textContent=(sf+csf).toFixed(1)+' sq ft total';
+  var pl=document.getElementById('qrlf_'+id);
+  if(pl) pl.innerHTML='Perimeter: <strong style="color:#1a5a96;">'+calcPerim(r)+'</strong> linear ft';
 }
 function calcPerim(r){
   var w=parseFloat(r.w)||0,l=parseFloat(r.l)||0;
@@ -767,7 +769,7 @@ function renderRooms(){
       +' onchange="setR('+r.id+',\'qrFinish\',\'stain\');recalc()"><label for="qrs_'+r.id+'" style="margin-right:10px;">Stain</label>'
       +'<input type="radio" name="qrf_'+r.id+'" id="qrn_'+r.id+'" value=""'+(r.qrFinish===''?' checked':'')
       +' onchange="setR('+r.id+',\'qrFinish\',\'\');recalc()"><label for="qrn_'+r.id+'">Unfinished</label></div>'
-      +'<div style="margin-top:6px;color:#7a8ba8;font-size:12px;">Perimeter: <strong style="color:#e8a020;">'+perim+'</strong> linear ft</div></div>';
+      +'<div id="qrlf_'+r.id+'" style="margin-top:6px;color:#5a7a9a;font-size:12px;">Perimeter: <strong style="color:#1a5a96;">'+perim+'</strong> linear ft</div></div>';
 
     // NOTES
     html+='<div class="rsec"><div class="rsec-title">Room Notes</div>'
