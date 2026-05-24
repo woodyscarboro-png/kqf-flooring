@@ -599,24 +599,29 @@ function renderCatalog(){
     groups[lbl].push(catalog[i]);
   }
   var CATS=['Carpet','Solid Hardwood','Engineered Hardwood','LVP','LVT','Laminate','Ceramic/Porcelain Tile','Sheet Vinyl','Glue-Down LVP/LVT','Underlayment — Foam','Underlayment — Rubber','Underlayment — Cork','Underlayment — Liquid','Padding — 6lb Rebond','Padding — 8lb Rebond','Padding — Memory Foam','Padding — Moisture Barrier','Cement Board','Ditra Membrane','Luan Underlayment','Floor Patch','Self-Leveling Compound','Removal — Carpet','Removal — Nailed HW','Removal — Glued','Removal — Tile','Removal — Tile+Cement','Removal — Vinyl','Removal — Laminate','Removal — Quarter Round','QR Material','QR Installation','QR Paint','QR Stain','Other'];
-  var html='';
+  var html='<table style="table-layout:fixed;"><colgroup><col style="width:35%"><col style="width:15%"><col style="width:14%"><col style="width:14%"><col style="width:10%"><col style="width:12%"></colgroup>'
+    +'<thead><tr><th>Product</th><th>SKU</th><th>Cost ($)</th><th>Install ($)</th><th>Unit</th><th></th></tr></thead><tbody>';
+  var currentGroup='';
   for(var gi=0;gi<CATS.length;gi++){
     var g=CATS[gi]; if(!groups[g]) continue;
-    html+='<h3>'+g+'</h3><table><thead><tr><th>Product</th><th>SKU</th><th>Cost ($)</th><th>Install ($)</th><th>Unit</th><th></th></tr></thead><tbody>';
+    html+='<tr><td colspan="6" style="padding:10px 12px 4px;background:#f0f4f8;border-bottom:none;">'
+      +'<span style="font-size:13px;font-weight:700;color:#1a5a96;text-transform:uppercase;letter-spacing:1.5px;">'+g+'</span>'
+      +'</td></tr>';
     var grp=groups[g];
     for(var i=0;i<grp.length;i++){
       var p=grp[i];
-      html+='<tr>'
-        +'<td style="padding:6px 8px;font-weight:600;font-size:13px;">'+p.name+'</td>'
-        +'<td style="padding:6px 8px;color:#7a8ba8;font-size:12px;">'+p.sku+'</td>'
-        +'<td style="padding:6px 8px;"><input type="number" value="'+p.cost+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'cost\',this.value)" style="background:#111722;border:1px solid #e8a020;color:#e8a020;padding:4px 6px;border-radius:5px;width:80px;font-size:13px;font-weight:700;"></td>'
-        +'<td style="padding:6px 8px;"><input type="number" value="'+p.inst+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'inst\',this.value)" style="background:#111722;border:1px solid #2a3347;color:#7a8ba8;padding:4px 6px;border-radius:5px;width:80px;font-size:13px;"></td>'
-        +'<td style="padding:6px 8px;color:#7a8ba8;font-size:12px;">'+p.unit+'</td>'
-        +'<td style="padding:6px 8px;"><button class="btn bred" onclick="deleteCatalogItem(\''+p.id+'\')">✕</button></td>'
+      var rowBg=i%2===0?'#ffffff':'#f5f9ff';
+      html+='<tr style="background:'+rowBg+';">'
+        +'<td style="padding:8px 12px;font-size:14px;font-weight:600;color:#1a2332;">'+p.name+'</td>'
+        +'<td style="padding:8px 12px;font-size:12px;color:#5a7a9a;">'+p.sku+'</td>'
+        +'<td style="padding:8px 12px;"><input type="number" value="'+p.cost+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'cost\',this.value)" style="background:#ffffff;border:2px solid #d1e3f5;color:#1a5a96;padding:5px 8px;border-radius:5px;width:100%;font-size:13px;font-weight:700;"></td>'
+        +'<td style="padding:8px 12px;"><input type="number" value="'+p.inst+'" step="0.01" min="0" onchange="editCatalogField(\''+p.id+'\',\'inst\',this.value)" style="background:#ffffff;border:2px solid #d1e3f5;color:#5a7a9a;padding:5px 8px;border-radius:5px;width:100%;font-size:13px;"></td>'
+        +'<td style="padding:8px 12px;font-size:12px;color:#5a7a9a;">'+p.unit+'</td>'
+        +'<td style="padding:8px 12px;text-align:center;"><button class="btn bred" onclick="deleteCatalogItem(\''+p.id+'\')">✕</button></td>'
         +'</tr>';
     }
-    html+='</tbody></table>';
   }
+  html+='</tbody></table>';
   div.innerHTML=html;
 }
 
