@@ -742,30 +742,32 @@ function renderAllRoomSelects(){for(var i=0;i<rooms.length;i++) renderUnderDropd
 function buildProductOpts(selectedId){
   var html='<option value="">— Select Product —</option>';
   var groups=[
-    {label:'── Hard Surface ──',cats:HARD_SURFACE_CATS},
-    {label:'── Carpet ──',cats:CARPET_CATS},
-    {label:'── Tile ──',cats:TILE_CATS},
-    {label:'── Sheet Vinyl / Glue-Down ──',cats:VINYL_CATS},
+    {label:'━━━ HARD SURFACE ━━━',cats:HARD_SURFACE_CATS},
+    {label:'━━━ CARPET ━━━',cats:CARPET_CATS},
+    {label:'━━━ TILE ━━━',cats:TILE_CATS},
+    {label:'━━━ SHEET VINYL / GLUE-DOWN ━━━',cats:VINYL_CATS},
   ];
   for(var g=0;g<groups.length;g++){
     var items=getCatByCats(groups[g].cats);
     if(items.length){
-      html+='<option disabled>'+groups[g].label+'</option>';
-      for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>'+items[i].name+' — $'+items[i].cost+'/sqft</option>';
+      html+='<option disabled style="font-weight:700;color:#0f4c75;background:#c5d9f0;letter-spacing:1px;">'+groups[g].label+'</option>';
+      for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>  '+items[i].name+' — $'+items[i].cost+'/sqft</option>';
     }
   }
   return html;
 }
 function buildRemovalOpts(selectedId){
   var html='<option value="">— No Removal Needed —</option>';
+  html+='<option disabled style="font-weight:700;color:#0f4c75;background:#c5d9f0;letter-spacing:1px;">━━━ REMOVAL TYPES ━━━</option>';
   var items=getCatByCats(ALL_REM_CATS);
-  for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>'+items[i].name+' — $'+items[i].cost+'/'+items[i].unit+'</option>';
+  for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>  '+items[i].name+' — $'+items[i].cost+'/'+items[i].unit+'</option>';
   return html;
 }
 function buildPrepOpts(selectedId){
   var html='<option value="">— No Prep Needed —</option>';
+  html+='<option disabled style="font-weight:700;color:#0f4c75;background:#c5d9f0;letter-spacing:1px;">━━━ PREP TYPES ━━━</option>';
   var items=getCatByCats(PREP_CATS);
-  for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>'+items[i].name+' — $'+items[i].cost+'/'+items[i].unit+'</option>';
+  for(var i=0;i<items.length;i++) html+='<option value="'+items[i].id+'"'+(items[i].id===selectedId?' selected':'')+'>  '+items[i].name+' — $'+items[i].cost+'/'+items[i].unit+'</option>';
   return html;
 }
 
