@@ -82,7 +82,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
 .loading{text-align:center;padding:30px;color:#7a8ba8;font-size:14px;}
 
 /* Vendor page wide-screen layout */
-:root{--vendor-sticky-top:118px;}
+:root{--vendor-sticky-top:74px;}
 #p-vendors{width:calc(100vw - 20px);margin-left:calc(50% - 50vw + 10px);margin-right:calc(50% - 50vw + 10px);max-width:none;}
 #p-vendors h2,#p-vendors h3,#p-vendors p,#p-vendors > table,#vendorList{max-width:none;width:100%;}
 #p-vendors > table td{padding:5px 8px;}
@@ -1263,8 +1263,9 @@ function renderVendors(){
 
 function updateStickyOffsets(){
   var hdr=document.getElementById('hdr');
-  var tabs=document.getElementById('tabs');
-  var top=(hdr?hdr.offsetHeight:78)+(tabs?tabs.offsetHeight:44);
+  // Keep the vendor list column header directly under the blue KQF header while scrolling.
+  // The tab row is intentionally not included here so the vendor columns do not float lower on the page.
+  var top=(hdr?hdr.offsetHeight:74);
   document.documentElement.style.setProperty('--vendor-sticky-top', top+'px');
 }
 
