@@ -82,22 +82,31 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
 .loading{text-align:center;padding:30px;color:#7a8ba8;font-size:14px;}
 
 /* Vendor page wide-screen layout */
-#p-vendors{width:calc(100vw - 36px);margin-left:calc(50% - 50vw + 18px);margin-right:calc(50% - 50vw + 18px);}
+:root{--vendor-sticky-top:118px;}
+#p-vendors{width:calc(100vw - 20px);margin-left:calc(50% - 50vw + 10px);margin-right:calc(50% - 50vw + 10px);max-width:none;}
 #p-vendors h2,#p-vendors h3,#p-vendors p,#p-vendors > table,#vendorList{max-width:none;width:100%;}
 #p-vendors > table td{padding:5px 8px;}
-#p-vendors > table .lbl{width:145px;font-size:12px;}
+#p-vendors > table .lbl{width:140px;font-size:12px;}
 #p-vendors > table input,#p-vendors > table textarea{font-size:13px;padding:7px 9px;}
-.vendor-table{width:100%;table-layout:fixed;font-size:12px;}
-.vendor-table th{position:sticky;top:112px;z-index:160;background:#e8f0fe;font-size:10px;letter-spacing:2px;padding:7px 8px;white-space:nowrap;}
-.vendor-table td{font-size:12px;padding:6px 8px;line-height:1.18;vertical-align:middle;}
-.vendor-table .v-name{font-weight:600;color:#1a5a96;font-size:13px;line-height:1.12;}
-.vendor-table .v-notes{font-size:11px;color:#5a7a9a;margin-top:2px;line-height:1.22;}
-.vendor-table .v-link{color:#1a5a96;font-weight:400;text-decoration:underline;white-space:nowrap;}
-.vendor-table .v-account,.vendor-table .v-rep{font-weight:400;color:#1a2332;}
-.vendor-table .v-actions{text-align:center;white-space:nowrap;}
-.vendor-table .v-edit{font-size:11px;padding:3px 7px;margin-right:3px;border-width:1px;}
-.vendor-table .v-del{font-size:11px;padding:3px 7px;border-width:1px;}
-@media(max-width:900px){.vendor-table{min-width:1050px;}#vendorList{overflow-x:auto;}.vendor-table th{top:112px;}}
+#p-vendors .vendor-list-title{background:#cbdcf6;border-left:5px solid #1a5a96;color:#0f3f78;margin-top:16px;margin-bottom:0;border-radius:0;}
+#vendorList{background:#fff;border:1px solid #d1e3f5;border-radius:0 0 10px 10px;overflow:visible;box-shadow:0 1px 4px rgba(26,90,150,0.08);}
+.vendor-list-grid{width:100%;}
+.vendor-list-head,.vendor-row{display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(115px,.65fr) minmax(125px,.7fr) minmax(185px,1.05fr) minmax(125px,.72fr) minmax(180px,1fr) minmax(125px,.7fr) minmax(88px,.45fr);align-items:center;column-gap:12px;}
+.vendor-list-head{position:sticky;top:var(--vendor-sticky-top);z-index:230;background:#bdd3f0;color:#0b3b78;border-top:2px solid #1a5a96;border-bottom:2px solid #1a5a96;box-shadow:0 3px 8px rgba(26,90,150,0.22);}
+.vendor-list-head div{font-size:10px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;padding:8px 8px;line-height:1.08;white-space:nowrap;}
+.vendor-row{min-height:42px;border-bottom:1px solid #dfeaf8;}
+.vendor-row:nth-child(odd){background:#f5f9ff;}
+.vendor-row:nth-child(even){background:#ffffff;}
+.vendor-cell{font-size:12px;line-height:1.18;padding:6px 8px;color:#1a2332;font-weight:400;overflow-wrap:normal;word-break:normal;}
+.vendor-name{font-size:12.5px;font-weight:600;color:#1a5a96;line-height:1.12;}
+.vendor-notes{font-size:10.5px;color:#5a7a9a;margin-top:2px;line-height:1.18;font-weight:400;}
+.vendor-link{color:#1a5a96;font-size:12px;font-weight:400;text-decoration:underline;white-space:nowrap;}
+.vendor-account,.vendor-rep{font-size:12px;font-weight:400;color:#1a2332;}
+.vendor-actions{text-align:right;white-space:nowrap;padding-right:8px;}
+.vendor-edit,.vendor-del{font-size:10.5px;padding:2px 6px;border-width:1px;border-radius:5px;line-height:1.2;min-width:0;}
+.vendor-edit{margin-right:3px;}
+.vendor-del{padding:2px 6px;}
+@media(max-width:1100px){#vendorList{overflow-x:auto;}.vendor-list-grid{min-width:1180px;}.vendor-list-head{top:var(--vendor-sticky-top);}}
 
 </style>
 </head>
@@ -334,7 +343,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
     </tr>
   </tbody></table>
 
-  <h3>📦 Vendor List</h3>
+  <h3 class="vendor-list-title">📦 Vendor List</h3>
   <div id="vendorList"><div class="loading">Loading vendors from cloud...</div></div>
 </div>
 
@@ -611,6 +620,7 @@ function setStatus(msg,cls){
 // INIT — Load from Supabase
 // ═══════════════════════════════
 async function init(){
+  updateStickyOffsets();
   try{
     var rows = await sbGet('kqf_catalog', {order:'created_at', asc:true});
     if(rows.length===0){
@@ -649,6 +659,7 @@ async function init(){
 // NAVIGATION
 // ═══════════════════════════════
 function go(name){
+  updateStickyOffsets();
   var names=['client','rooms','catalog','vendors','modules','totals','saved'];
   for(var i=0;i<names.length;i++){
     document.getElementById('tab-'+names[i]).className=(names[i]===name)?'on':'';
@@ -950,6 +961,7 @@ async function deleteVendor(id){
   }catch(e){toast('Vendor delete failed',true);}
 }
 function renderVendors(){
+  updateStickyOffsets();
   var div=document.getElementById('vendorList'); if(!div) return;
   var html='';
   if(vendorLoadError) html+=vendorTableHelp();
@@ -958,29 +970,38 @@ function renderVendors(){
     div.innerHTML=html;
     return;
   }
-  html+='<table class="vendor-table"><colgroup>'
-    +'<col style="width:18%"><col style="width:11%"><col style="width:12%"><col style="width:18%"><col style="width:12%"><col style="width:15%"><col style="width:9%"><col style="width:5%">'
-    +'</colgroup><thead><tr><th>Supplier / Vendor</th><th>Account #</th><th>Rep</th><th>Rep Phone / Email</th><th>Dealer Phone</th><th>Vendor Email</th><th>Website</th><th>Actions</th></tr></thead><tbody>';
+  html+='<div class="vendor-list-grid">'
+    +'<div class="vendor-list-head">'
+    +'<div>Supplier / Vendor</div><div>Account #</div><div>Rep</div><div>Rep Phone / Email</div><div>Dealer Phone</div><div>Vendor Email</div><div>Website</div><div>Actions</div>'
+    +'</div>';
   for(var i=0;i<vendors.length;i++){
     var v=vendors[i];
     var repContact=[];
     if(v.phone) repContact.push(phoneLink(v.phone));
     if(v.email) repContact.push(emailLink(v.email));
     var accountText=v.account_number?'Acct: '+esc(v.account_number):'';
-    html+='<tr>'
-      +'<td><div style="font-weight:700;color:#1a5a96;">'+esc(v.name)+'</div>'+(v.notes?'<div style="font-size:12px;color:#5a7a9a;margin-top:3px;line-height:1.35;">'+esc(v.notes)+'</div>':'')+'</td>'
-      +'<td>'+accountText+'</td>'
-      +'<td>'+esc(v.rep)+'</td>'
-      +'<td>'+repContact.join('<br>')+'</td>'
-      +'<td>'+phoneLink(v.dealer_phone)+'</td>'
-      +'<td>'+emailLink(v.dealer_email)+'</td>'
-      +'<td>'+websiteLink(v.website)+'</td>'
-      +'<td style="text-align:center;white-space:nowrap;"><button class="btn bline" style="font-size:12px;padding:5px 10px;margin-right:5px;" onclick="editVendor(\''+esc(v.id)+'\')">Edit</button><button class="btn bred" onclick="deleteVendor(\''+esc(v.id)+'\')">✕</button></td>'
-      +'</tr>';
+    html+='<div class="vendor-row">'
+      +'<div class="vendor-cell"><div class="vendor-name">'+esc(v.name)+'</div>'+(v.notes?'<div class="vendor-notes">'+esc(v.notes)+'</div>':'')+'</div>'
+      +'<div class="vendor-cell vendor-account">'+accountText+'</div>'
+      +'<div class="vendor-cell vendor-rep">'+esc(v.rep)+'</div>'
+      +'<div class="vendor-cell">'+repContact.join('<br>')+'</div>'
+      +'<div class="vendor-cell">'+phoneLink(v.dealer_phone)+'</div>'
+      +'<div class="vendor-cell">'+emailLink(v.dealer_email)+'</div>'
+      +'<div class="vendor-cell">'+websiteLink(v.website)+'</div>'
+      +'<div class="vendor-cell vendor-actions"><button class="btn bline vendor-edit" onclick="editVendor(\''+esc(v.id)+'\')">Edit</button><button class="btn bred vendor-del" onclick="deleteVendor(\''+esc(v.id)+'\')">✕</button></div>'
+      +'</div>';
   }
-  html+='</tbody></table>';
+  html+='</div>';
   div.innerHTML=html;
 }
+
+function updateStickyOffsets(){
+  var hdr=document.getElementById('hdr');
+  var tabs=document.getElementById('tabs');
+  var top=(hdr?hdr.offsetHeight:78)+(tabs?tabs.offsetHeight:44);
+  document.documentElement.style.setProperty('--vendor-sticky-top', top+'px');
+}
+
 
 
 // ═══════════════════════════════
@@ -1640,6 +1661,8 @@ function clearAll(){
 // ═══════════════════════════════
 // START
 // ═══════════════════════════════
+window.addEventListener('resize', updateStickyOffsets);
+updateStickyOffsets();
 init();loadTaxRate();
 </script>
 </body>
