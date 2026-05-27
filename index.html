@@ -274,37 +274,33 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
 <!-- VENDORS -->
 <div class="page" id="p-vendors">
   <h2>Vendors</h2>
-  <p style="color:#7a8ba8;font-size:13px;margin-bottom:14px;">Store vendor companies, reps, account numbers, dealer contacts, websites, and notes. Saves to the cloud when the <strong>kqf_vendors</strong> table exists in Supabase.</p>
+  <p style="color:#7a8ba8;font-size:13px;margin-bottom:14px;">Store suppliers/vendors, account numbers, reps, dealer contacts, websites, and notes. Saves to the cloud when the <strong>kqf_vendors</strong> table exists in Supabase.</p>
 
   <h3>➕ Add Vendor</h3>
   <table><tbody>
     <tr>
       <td class="lbl">Supplier / Vendor</td>
       <td><input type="text" id="v_name" placeholder="e.g. UCX / JJ Haines" autocomplete="organization"></td>
-      <td class="lbl">Company Name</td>
-      <td><input type="text" id="v_company" placeholder="Company name shown on account" autocomplete="organization"></td>
-    </tr>
-    <tr>
       <td class="lbl">Account #</td>
       <td><input type="text" id="v_account" placeholder="Account number" autocomplete="off"></td>
+    </tr>
+    <tr>
       <td class="lbl">Rep / Contact</td>
       <td><input type="text" id="v_rep" placeholder="Sales rep or contact name" autocomplete="name"></td>
-    </tr>
-    <tr>
       <td class="lbl">Vendor Phone</td>
       <td><input type="tel" id="v_phone" placeholder="336-000-0000" autocomplete="tel"></td>
+    </tr>
+    <tr>
       <td class="lbl">Vendor Email</td>
       <td><input type="email" id="v_email" placeholder="vendor@email.com" autocomplete="email"></td>
-    </tr>
-    <tr>
       <td class="lbl">Dealer Phone</td>
       <td><input type="tel" id="v_dealer_phone" placeholder="Dealer support phone" autocomplete="tel"></td>
-      <td class="lbl">Dealer Email</td>
-      <td><input type="email" id="v_dealer_email" placeholder="dealer@email.com" autocomplete="email"></td>
     </tr>
     <tr>
+      <td class="lbl">Dealer Email</td>
+      <td><input type="email" id="v_dealer_email" placeholder="dealer@email.com" autocomplete="email"></td>
       <td class="lbl">Website</td>
-      <td colspan="3"><input type="url" id="v_website" placeholder="https://vendorwebsite.com" autocomplete="url"></td>
+      <td><input type="url" id="v_website" placeholder="https://vendorwebsite.com" autocomplete="url"></td>
     </tr>
     <tr>
       <td class="lbl">Notes</td>
@@ -781,18 +777,18 @@ function esc(s){
 function vendorTableHelp(){
   return '<div class="rsec" style="border-color:#dc2626;background:#fff7f7;">'
     +'<div style="font-weight:700;color:#dc2626;margin-bottom:6px;">Vendor table is not available yet.</div>'
-    +'<div style="font-size:13px;color:#5a7a9a;line-height:1.45;">Create or update the Supabase table named <strong>kqf_vendors</strong> with columns: <strong>id</strong>, <strong>created_at</strong>, <strong>name</strong>, <strong>company</strong>, <strong>account_number</strong>, <strong>rep</strong>, <strong>phone</strong>, <strong>email</strong>, <strong>dealer_phone</strong>, <strong>dealer_email</strong>, <strong>website</strong>, and <strong>notes</strong>. Once that table exists and has public anon permissions, this tab will work.</div>'
+    +'<div style="font-size:13px;color:#5a7a9a;line-height:1.45;">Create or update the Supabase table named <strong>kqf_vendors</strong> with columns: <strong>id</strong>, <strong>created_at</strong>, <strong>name</strong>, <strong>account_number</strong>, <strong>rep</strong>, <strong>phone</strong>, <strong>email</strong>, <strong>dealer_phone</strong>, <strong>dealer_email</strong>, <strong>website</strong>, and <strong>notes</strong>. Once that table exists and has public anon permissions, this tab will work.</div>'
     +'</div>';
 }
 async function addVendor(){
   var name=gv('v_name').trim();
   if(!name){alert('Enter supplier / vendor name.');return;}
-  var item={id:String(Date.now()),name:name,company:gv('v_company'),account_number:gv('v_account'),rep:gv('v_rep'),phone:gv('v_phone'),email:gv('v_email'),dealer_phone:gv('v_dealer_phone'),dealer_email:gv('v_dealer_email'),website:gv('v_website'),notes:gv('v_notes')};
+  var item={id:String(Date.now()),name:name,account_number:gv('v_account'),rep:gv('v_rep'),phone:gv('v_phone'),email:gv('v_email'),dealer_phone:gv('v_dealer_phone'),dealer_email:gv('v_dealer_email'),website:gv('v_website'),notes:gv('v_notes')};
   try{
     await sbUpsert('kqf_vendors',[item]);
     vendors.unshift(item);
     vendorLoadError='';
-    sv('v_name','');sv('v_company','');sv('v_account','');sv('v_rep','');sv('v_phone','');sv('v_email','');sv('v_dealer_phone','');sv('v_dealer_email','');sv('v_website','');sv('v_notes','');
+    sv('v_name','');sv('v_account','');sv('v_rep','');sv('v_phone','');sv('v_email','');sv('v_dealer_phone','');sv('v_dealer_email','');sv('v_website','');sv('v_notes','');
     renderVendors();
     toast('Vendor saved ✓');
   }catch(e){
@@ -818,15 +814,13 @@ function renderVendors(){
     div.innerHTML=html;
     return;
   }
-  html+='<table><thead><tr><th>Supplier / Vendor</th><th>Company / Account</th><th>Rep</th><th>Vendor Contact</th><th>Dealer Contact</th><th>Website</th><th></th></tr></thead><tbody>';
+  html+='<table><thead><tr><th>Supplier / Vendor</th><th>Account #</th><th>Rep</th><th>Vendor Contact</th><th>Dealer Contact</th><th>Website</th><th></th></tr></thead><tbody>';
   for(var i=0;i<vendors.length;i++){
     var v=vendors[i];
     var email=v.email?'<a href="mailto:'+esc(v.email)+'" style="color:#1a5a96;font-weight:700;">'+esc(v.email)+'</a>':'';
     var dealerEmail=v.dealer_email?'<a href="mailto:'+esc(v.dealer_email)+'" style="color:#1a5a96;font-weight:700;">'+esc(v.dealer_email)+'</a>':'';
     var website=v.website?'<a href="'+esc(v.website)+'" target="_blank" rel="noopener" style="color:#1a5a96;font-weight:700;">Open</a>':'';
-    var companyBits=[];
-    if(v.company) companyBits.push(esc(v.company));
-    if(v.account_number) companyBits.push('Acct: '+esc(v.account_number));
+    var accountText=v.account_number?'Acct: '+esc(v.account_number):'';
     var vendorContact=[];
     if(v.phone) vendorContact.push(esc(v.phone));
     if(email) vendorContact.push(email);
@@ -835,7 +829,7 @@ function renderVendors(){
     if(dealerEmail) dealerContact.push(dealerEmail);
     html+='<tr>'
       +'<td><div style="font-weight:700;color:#1a5a96;">'+esc(v.name)+'</div>'+(v.notes?'<div style="font-size:12px;color:#5a7a9a;margin-top:3px;line-height:1.35;">'+esc(v.notes)+'</div>':'')+'</td>'
-      +'<td>'+companyBits.join('<br>')+'</td>'
+      +'<td>'+accountText+'</td>'
       +'<td>'+esc(v.rep)+'</td>'
       +'<td>'+vendorContact.join('<br>')+'</td>'
       +'<td>'+dealerContact.join('<br>')+'</td>'
