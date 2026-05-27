@@ -109,6 +109,24 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
 .vendor-del{padding:2px 6px;}
 @media(max-width:1250px){#vendorList{overflow-x:auto;}.vendor-list-grid{min-width:1340px;}.vendor-list-head{top:var(--vendor-sticky-top);}}
 
+
+#vendor-activity-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9500;align-items:center;justify-content:center;padding:18px;}
+#vendor-activity-overlay.open{display:flex;}
+#vendor-activity-box{background:#fff;width:920px;max-width:98vw;max-height:92vh;border-radius:12px;box-shadow:0 10px 45px rgba(0,0,0,.35);overflow:hidden;border:2px solid #1a5a96;}
+#vendor-activity-hdr{background:#1a5a96;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+#vendor-activity-title{font-weight:700;font-size:16px;letter-spacing:1px;}
+#vendor-activity-close{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;font-size:15px;font-weight:700;padding:4px 10px;cursor:pointer;}
+#vendor-activity-body{padding:14px;overflow:auto;max-height:calc(92vh - 54px);}
+.activity-row{border:1px solid #d1e3f5;border-radius:8px;background:#f5f9ff;margin-bottom:8px;padding:8px 10px;}
+.activity-meta{font-size:11px;color:#1a5a96;font-weight:700;letter-spacing:.5px;margin-bottom:4px;}
+.activity-note{font-size:12px;color:#1a2332;white-space:pre-wrap;line-height:1.35;}
+.activity-editor{background:#eef5ff;border:1px solid #c5d9f0;border-radius:9px;padding:10px;margin-bottom:12px;}
+.activity-editor label{display:block;font-size:11px;font-weight:700;color:#1a5a96;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.activity-editor textarea{min-height:95px;background:#fff;}
+.activity-small-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.activity-small-grid input{background:#fff;}
+.vendor-notes-btn{font-size:10.5px;padding:2px 6px;border-width:1px;border-radius:5px;line-height:1.2;min-width:0;margin-right:3px;}
+
 </style>
 </head>
 <body>
@@ -466,6 +484,35 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
   </div>
 </div>
 
+
+<!-- VENDOR ACTIVITY / CALL NOTES -->
+<div id="vendor-activity-overlay">
+  <div id="vendor-activity-box">
+    <div id="vendor-activity-hdr">
+      <div id="vendor-activity-title">Vendor Contact Notes</div>
+      <button id="vendor-activity-close" type="button">Close</button>
+    </div>
+    <div id="vendor-activity-body">
+      <div class="activity-editor">
+        <label id="activity-current-label">Current Contact Note</label>
+        <textarea id="activity_note_text" placeholder="Type notes while the call or email is happening..."></textarea>
+        <div class="activity-small-grid" id="email-copy-fields" style="display:none;">
+          <div><label>Email Subject Copy</label><input type="text" id="activity_email_subject" placeholder="Subject line, if you want to save it here"></div>
+          <div><label>Email To</label><input type="text" id="activity_email_to" placeholder="Email address"></div>
+          <div style="grid-column:1 / -1;"><label>Email Body Copy</label><textarea id="activity_email_body" rows="4" placeholder="Paste or type the email message here if you want this app to keep a copy."></textarea></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn bgold" id="btn-save-activity-note" type="button">Save Note</button>
+          <button class="btn bline" id="btn-new-general-note" type="button">Add General Note</button>
+          <span id="activity-save-status" style="font-size:12px;color:#5a7a9a;font-weight:700;"></span>
+        </div>
+      </div>
+      <h3 style="margin-top:8px;">Contact History</h3>
+      <div id="vendor-activity-list"><div class="loading">Loading notes...</div></div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -521,7 +568,7 @@ async function sbDeleteWhere(table, field, value){
 // ═══════════════════════════════
 // STATE
 // ═══════════════════════════════
-var rooms=[], saved=[], catalog=[], vendors=[], vendorModules=[], vendorProducts=[], rid=0, vendorLoadError="", moduleLoadError="";
+var rooms=[], saved=[], catalog=[], vendors=[], vendorModules=[], vendorProducts=[], vendorActivities=[], rid=0, vendorLoadError="", moduleLoadError="", vendorActivityLoadError="", activeVendorActivityId=null, activeVendorId=null;
 var editingVendorId=null;
 
 var CAT_LABELS={
@@ -651,6 +698,14 @@ async function init(){
     vendors = [];
     vendorLoadError = e.message || 'Vendor table could not be loaded.';
   }
+  try{
+    var arows = await sbGet('kqf_vendor_activities', {order:'created_at', asc:false});
+    vendorActivities = arows;
+    vendorActivityLoadError = '';
+  } catch(e){
+    vendorActivities = [];
+    vendorActivityLoadError = e.message || 'Vendor activity table could not be loaded.';
+  }
   renderRooms();
   renderSaved();
   renderVendors();
@@ -688,6 +743,10 @@ document.getElementById('btn-add-cat').addEventListener('click',function(){addCa
 document.getElementById('btn-vendors').addEventListener('click',function(){go('vendors');});
 document.getElementById('btn-add-vendor').addEventListener('click',function(){addVendor();});
 document.getElementById('btn-cancel-vendor-edit').addEventListener('click',function(){clearVendorForm();});
+document.getElementById('vendor-activity-close').addEventListener('click',function(){closeVendorActivity();});
+document.getElementById('vendor-activity-overlay').addEventListener('click',function(e){if(e.target===this)closeVendorActivity();});
+document.getElementById('btn-save-activity-note').addEventListener('click',function(){saveVendorActivityNote();});
+document.getElementById('btn-new-general-note').addEventListener('click',function(){startGeneralVendorNote();});
 document.getElementById('btn-add-module').addEventListener('click',function(){addVendorModule();});
 document.getElementById('module_csv_import').addEventListener('change',function(){importModuleCSV(this);});
 document.getElementById('btn-save-est').addEventListener('click',function(){saveEst();});
@@ -891,25 +950,147 @@ function cleanPhoneForLink(phone){
   phone=String(phone||'').trim();
   return phone.replace(/[^0-9+]/g,'');
 }
-function phoneLink(phone){
+function getVendorById(id){
+  for(var i=0;i<vendors.length;i++) if(String(vendors[i].id)===String(id)) return vendors[i];
+  return null;
+}
+function phoneLink(phone,vendorId,label){
   phone=String(phone||'').trim();
   if(!phone) return '';
-  var cleaned=cleanPhoneForLink(phone);
-  return '<a class="v-link" href="tel:'+esc(cleaned)+'">'+esc(phone)+'</a>';
+  return '<a class="v-link" href="#" onclick="vendorContactClick(\''+esc(vendorId)+'\',\'call\',\''+esc(label)+'\',\''+esc(phone)+'\');return false;">'+esc(phone)+'</a>';
 }
 function normalizeEmail(email){
   return String(email||'').trim().replace(/\s+/g,'');
 }
-function emailLink(email){
+function emailLink(email,vendorId,label){
   email=normalizeEmail(email);
   if(!email) return '';
-  var gmail='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email);
-  return '<a class="v-link" href="'+gmail+'" target="_blank" rel="noopener">'+esc(email)+'</a>';
+  return '<a class="v-link" href="#" onclick="vendorContactClick(\''+esc(vendorId)+'\',\'email\',\''+esc(label)+'\',\''+esc(email)+'\');return false;">'+esc(email)+'</a>';
 }
 function websiteLink(url){
   url=normalizeUrl(url);
   if(!url) return '';
   return '<a class="v-link" href="'+esc(url)+'" target="_blank" rel="noopener">Open Website</a>';
+}
+function activityTableHelp(){
+  return '<div class="rsec" style="border-color:#dc2626;background:#fff7f7;">'
+    +'<div style="font-weight:700;color:#dc2626;margin-bottom:6px;">Vendor note table is not available yet.</div>'
+    +'<div style="font-size:13px;color:#5a7a9a;line-height:1.45;">Run the <strong>kqf_vendor_activities</strong> SQL file in Supabase, then refresh this page.</div>'
+    +'</div>';
+}
+function fmtDateTime(iso){
+  if(!iso) return '';
+  try{return new Date(iso).toLocaleString();}catch(e){return iso;}
+}
+function renderVendorActivityList(vendorId){
+  var div=document.getElementById('vendor-activity-list'); if(!div) return;
+  var html='';
+  if(vendorActivityLoadError) html+=activityTableHelp();
+  var list=[];
+  for(var i=0;i<vendorActivities.length;i++) if(String(vendorActivities[i].vendor_id)===String(vendorId)) list.push(vendorActivities[i]);
+  if(!list.length){html+='<div class="empty" style="padding:16px;"><p>No contact history for this vendor yet.</p></div>';div.innerHTML=html;return;}
+  for(var j=0;j<list.length;j++){
+    var a=list[j];
+    var kind=(a.activity_type||'note').toUpperCase();
+    var meta=fmtDateTime(a.created_at)+' · '+kind+(a.contact_label?' · '+esc(a.contact_label):'')+(a.contact_value?' · '+esc(a.contact_value):'');
+    html+='<div class="activity-row"><div class="activity-meta">'+meta+'</div>';
+    if(a.email_subject) html+='<div class="activity-note"><strong>Subject:</strong> '+esc(a.email_subject)+'</div>';
+    if(a.email_body) html+='<div class="activity-note"><strong>Email copy:</strong> '+esc(a.email_body)+'</div>';
+    html+='<div class="activity-note">'+(a.note?esc(a.note):'<span style="color:#7a8ba8;">No note entered yet.</span>')+'</div></div>';
+  }
+  div.innerHTML=html;
+}
+function openVendorActivityPanel(vendorId,activityId){
+  activeVendorId=String(vendorId||'');
+  activeVendorActivityId=activityId?String(activityId):null;
+  var v=getVendorById(activeVendorId)||{};
+  var title=document.getElementById('vendor-activity-title');
+  if(title) title.textContent='Vendor Contact Notes — '+(v.name||'Vendor');
+  sv('activity_note_text','');sv('activity_email_subject','');sv('activity_email_body','');sv('activity_email_to','');
+  var emailFields=document.getElementById('email-copy-fields'); if(emailFields) emailFields.style.display='none';
+  var label=document.getElementById('activity-current-label'); if(label) label.textContent='Current Contact Note';
+  if(activeVendorActivityId){
+    for(var i=0;i<vendorActivities.length;i++){
+      var a=vendorActivities[i];
+      if(String(a.id)===String(activeVendorActivityId)){
+        sv('activity_note_text',a.note||'');sv('activity_email_subject',a.email_subject||'');sv('activity_email_body',a.email_body||'');sv('activity_email_to',a.email_to||'');
+        if(emailFields) emailFields.style.display=(a.activity_type==='email')?'grid':'none';
+        if(label) label.textContent=(a.activity_type==='email'?'Email Note':'Phone Call Note')+' — '+fmtDateTime(a.created_at);
+        break;
+      }
+    }
+  }
+  renderVendorActivityList(activeVendorId);
+  var overlay=document.getElementById('vendor-activity-overlay'); if(overlay) overlay.className='open';
+  setTimeout(function(){var el=document.getElementById('activity_note_text');if(el)el.focus();},120);
+}
+function closeVendorActivity(){
+  var overlay=document.getElementById('vendor-activity-overlay'); if(overlay) overlay.className='';
+}
+async function createVendorActivity(vendorId,type,label,value){
+  var v=getVendorById(vendorId)||{};
+  var id=String(Date.now())+'-'+Math.floor(Math.random()*100000);
+  var item={id:id,vendor_id:String(vendorId),vendor_name:v.name||'',activity_type:type,contact_label:label||'',contact_value:value||'',email_to:(type==='email'?value:''),email_subject:'',email_body:'',note:'',created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  try{
+    await sbUpsert('kqf_vendor_activities',[item]);
+    vendorActivities.unshift(item);
+    vendorActivityLoadError='';
+  }catch(e){
+    vendorActivityLoadError=e.message||'Vendor activity save failed.';
+    vendorActivities.unshift(item);
+    toast('Contact note table needs SQL setup',true);
+  }
+  return id;
+}
+async function vendorContactClick(vendorId,type,label,value){
+  var id=await createVendorActivity(vendorId,type,label,value);
+  openVendorActivityPanel(vendorId,id);
+  if(type==='call'){
+    var cleaned=cleanPhoneForLink(value);
+    if(cleaned) setTimeout(function(){window.location.href='tel:'+cleaned;},250);
+  } else if(type==='email'){
+    var email=normalizeEmail(value);
+    if(email){
+      var gmail='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email);
+      setTimeout(function(){window.open(gmail,'_blank','noopener');},250);
+    }
+  }
+}
+function openVendorNotes(vendorId){
+  openVendorActivityPanel(vendorId,null);
+}
+async function startGeneralVendorNote(){
+  if(!activeVendorId){return;}
+  var id=await createVendorActivity(activeVendorId,'note','General Note','');
+  activeVendorActivityId=id;
+  openVendorActivityPanel(activeVendorId,id);
+}
+async function saveVendorActivityNote(){
+  if(!activeVendorId){return;}
+  if(!activeVendorActivityId){activeVendorActivityId=await createVendorActivity(activeVendorId,'note','General Note','');}
+  var item=null;
+  for(var i=0;i<vendorActivities.length;i++){
+    if(String(vendorActivities[i].id)===String(activeVendorActivityId)){item=vendorActivities[i];break;}
+  }
+  if(!item) return;
+  item.note=gv('activity_note_text');
+  item.email_subject=gv('activity_email_subject');
+  item.email_body=gv('activity_email_body');
+  item.email_to=gv('activity_email_to')||item.email_to||'';
+  item.updated_at=new Date().toISOString();
+  var status=document.getElementById('activity-save-status'); if(status) status.textContent='Saving...';
+  try{
+    await sbUpsert('kqf_vendor_activities',[item]);
+    vendorActivityLoadError='';
+    if(status) status.textContent='Saved ✓';
+    renderVendorActivityList(activeVendorId);
+    toast('Contact note saved');
+  }catch(e){
+    vendorActivityLoadError=e.message||'Vendor activity save failed.';
+    if(status) status.textContent='Save failed';
+    renderVendorActivityList(activeVendorId);
+    toast('Contact note save failed',true);
+  }
 }
 function clearVendorForm(){
   editingVendorId=null;
@@ -986,12 +1167,12 @@ function renderVendors(){
       +'<div class="vendor-cell"><div class="vendor-name">'+esc(v.name)+'</div>'+(v.notes?'<div class="vendor-notes">'+esc(v.notes)+'</div>':'')+'</div>'
       +'<div class="vendor-cell vendor-account">'+accountText+'</div>'
       +'<div class="vendor-cell vendor-rep">'+esc(v.rep)+'</div>'
-      +'<div class="vendor-cell">'+phoneLink(v.phone)+'</div>'
-      +'<div class="vendor-cell">'+emailLink(v.email)+'</div>'
-      +'<div class="vendor-cell">'+phoneLink(v.dealer_phone)+'</div>'
-      +'<div class="vendor-cell">'+emailLink(v.dealer_email)+'</div>'
+      +'<div class="vendor-cell">'+phoneLink(v.phone,v.id,'Rep Phone')+'</div>'
+      +'<div class="vendor-cell">'+emailLink(v.email,v.id,'Rep Email')+'</div>'
+      +'<div class="vendor-cell">'+phoneLink(v.dealer_phone,v.id,'Dealer Phone')+'</div>'
+      +'<div class="vendor-cell">'+emailLink(v.dealer_email,v.id,'Vendor Email')+'</div>'
       +'<div class="vendor-cell">'+websiteLink(v.website)+'</div>'
-      +'<div class="vendor-cell vendor-actions"><button class="btn bline vendor-edit" onclick="editVendor(\''+esc(v.id)+'\')">Edit</button><button class="btn bred vendor-del" onclick="deleteVendor(\''+esc(v.id)+'\')">✕</button></div>'
+      +'<div class="vendor-cell vendor-actions"><button class="btn bline vendor-notes-btn" onclick="openVendorNotes(\''+esc(v.id)+'\')">Notes</button><button class="btn bline vendor-edit" onclick="editVendor(\''+esc(v.id)+'\')">Edit</button><button class="btn bred vendor-del" onclick="deleteVendor(\''+esc(v.id)+'\')">✕</button></div>'
       +'</div>';
   }
   html+='</div>';
