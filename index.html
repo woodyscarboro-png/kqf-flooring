@@ -92,7 +92,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
     <div id="sync-status">⏳ Connecting to cloud...</div>
   </div>
   <div style="display:flex;gap:8px;">
-    <a href="vendors.html" class="btn bline" style="text-decoration:none;font-family:Arial,sans-serif;font-weight:700;font-size:14px;border-radius:7px;padding:9px 16px;cursor:pointer;">📦 Vendors</a>
+    <button class="btn bline" id="btn-vendors">📦 Vendors</button>
     <button class="btn bline" id="btnClear">Clear</button>
     <button class="btn bgold" id="btnSave">Save</button>
   </div>
@@ -102,6 +102,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
   <button id="tab-client" class="on">Client</button>
   <button id="tab-rooms">Rooms</button>
   <button id="tab-catalog">Catalog</button>
+  <button id="tab-vendors">Vendors</button>
   <button id="tab-totals">Totals</button>
   <button id="tab-saved">Saved</button>
 </div>
@@ -269,6 +270,43 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
   <div id="catList"><div class="loading">Loading catalog from cloud...</div></div>
 </div>
 
+
+<!-- VENDORS -->
+<div class="page" id="p-vendors">
+  <h2>Vendors</h2>
+  <p style="color:#7a8ba8;font-size:13px;margin-bottom:14px;">Store vendor contacts, reps, phone numbers, emails, websites, and notes. Saves to the cloud when the <strong>kqf_vendors</strong> table exists in Supabase.</p>
+
+  <h3>➕ Add Vendor</h3>
+  <table><tbody>
+    <tr>
+      <td class="lbl">Vendor Name</td>
+      <td><input type="text" id="v_name" placeholder="Vendor or supplier name" autocomplete="organization"></td>
+      <td class="lbl">Rep / Contact</td>
+      <td><input type="text" id="v_rep" placeholder="Sales rep or contact name" autocomplete="name"></td>
+    </tr>
+    <tr>
+      <td class="lbl">Phone</td>
+      <td><input type="tel" id="v_phone" placeholder="336-000-0000" autocomplete="tel"></td>
+      <td class="lbl">Email</td>
+      <td><input type="email" id="v_email" placeholder="rep@vendor.com" autocomplete="email"></td>
+    </tr>
+    <tr>
+      <td class="lbl">Website</td>
+      <td colspan="3"><input type="url" id="v_website" placeholder="https://vendorwebsite.com" autocomplete="url"></td>
+    </tr>
+    <tr>
+      <td class="lbl">Notes</td>
+      <td colspan="3"><textarea id="v_notes" rows="3" placeholder="Pricing notes, product lines, account number, delivery details, etc." style="resize:vertical;"></textarea></td>
+    </tr>
+    <tr>
+      <td colspan="4" style="padding:8px 10px;"><button class="btn bgold" id="btn-add-vendor">+ Add Vendor</button></td>
+    </tr>
+  </tbody></table>
+
+  <h3>📦 Vendor List</h3>
+  <div id="vendorList"><div class="loading">Loading vendors from cloud...</div></div>
+</div>
+
 <!-- TOTALS -->
 <div class="page" id="p-totals">
   <h2>Estimate Summary</h2>
@@ -282,14 +320,14 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
       <div class="titem"><div class="tlbl">Underlayment</div><div class="tval" id="t_under">$0.00</div></div>
       <div class="titem"><div class="tlbl">Quarter Round</div><div class="tval" id="t_qr">$0.00</div></div>
       <div class="titem"><div class="tlbl">Prep / Other</div><div class="tval" id="t_prep">$0.00</div></div>
-      <div class="titem"><div class="tlbl">Tax (Materials)</div><div class="tval" id="t_tax">$0.00</div></div>
+      <div class="titem"><div class="tlbl">Tax (Materials &amp; Labor)</div><div class="tval" id="t_tax">$0.00</div></div>
       <div class="titem"><div class="tlbl">Misc Charges</div><div class="tval" id="t_misc">$0.00</div></div>
       <div class="titem" style="border-left-color:#16a34a;"><div class="tlbl">GRAND TOTAL</div><div class="tvalg" id="t_grand">$0.00</div></div>
     </div>
     <!-- TAX RATE -->
     <div style="margin-top:14px;background:#f5f9ff;border:1px solid #d1e3f5;border-radius:8px;padding:12px 14px;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span style="font-weight:700;font-size:13px;color:#1a5a96;white-space:nowrap;">Tax Rate (materials only):</span>
+        <span style="font-weight:700;font-size:13px;color:#1a5a96;white-space:nowrap;">Tax Rate (materials &amp; labor):</span>
         <input type="number" id="tax_rate" value="6.75" step="0.01" min="0" max="20" style="width:90px;padding:6px 8px;border:2px solid #d1e3f5;border-radius:6px;background:#fff;color:#1a5a96;font-weight:700;font-size:14px;" oninput="saveTaxRate();recalc()">
         <span style="font-weight:700;color:#1a5a96;">%</span>
         <span style="font-size:12px;color:#5a7a9a;">Edit the number — saves automatically</span>
@@ -382,7 +420,7 @@ async function sbDelete(table, id){
 // ═══════════════════════════════
 // STATE
 // ═══════════════════════════════
-var rooms=[], saved=[], catalog=[], rid=0;
+var rooms=[], saved=[], catalog=[], vendors=[], rid=0, vendorLoadError="";
 
 var CAT_LABELS={
   hardwood:'Solid Hardwood',engineered:'Engineered Hardwood',laminate:'Laminate',
@@ -502,15 +540,24 @@ async function init(){
     var ests = await sbGet('kqf_estimates', {order:'created_at', asc:false});
     saved = ests;
   } catch(e){}
+  try{
+    var vrows = await sbGet('kqf_vendors', {order:'created_at', asc:false});
+    vendors = vrows;
+    vendorLoadError = '';
+  } catch(e){
+    vendors = [];
+    vendorLoadError = e.message || 'Vendor table could not be loaded.';
+  }
   renderRooms();
   renderSaved();
+  renderVendors();
 }
 
 // ═══════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════
 function go(name){
-  var names=['client','rooms','catalog','totals','saved'];
+  var names=['client','rooms','catalog','vendors','totals','saved'];
   for(var i=0;i<names.length;i++){
     document.getElementById('tab-'+names[i]).className=(names[i]===name)?'on':'';
     document.getElementById('p-'+names[i]).className='page'+(names[i]===name?' on':'');
@@ -518,18 +565,22 @@ function go(name){
   if(name==='totals') recalc();
   if(name==='saved')  renderSaved();
   if(name==='catalog') renderCatalog();
+  if(name==='vendors') renderVendors();
   window.scrollTo(0,0);
 }
 
 document.getElementById('tab-client').addEventListener('click',function(){go('client');});
 document.getElementById('tab-rooms').addEventListener('click',function(){go('rooms');});
 document.getElementById('tab-catalog').addEventListener('click',function(){go('catalog');});
+document.getElementById('tab-vendors').addEventListener('click',function(){go('vendors');});
 document.getElementById('tab-totals').addEventListener('click',function(){go('totals');});
 document.getElementById('tab-saved').addEventListener('click',function(){go('saved');});
 document.getElementById('btn-next-rooms').addEventListener('click',function(){go('rooms');});
 document.getElementById('btn-to-totals').addEventListener('click',function(){recalc();go('totals');});
 document.getElementById('btn-add-room').addEventListener('click',function(){addRoom();});
 document.getElementById('btn-add-cat').addEventListener('click',function(){addCatalogItem();});
+document.getElementById('btn-vendors').addEventListener('click',function(){go('vendors');});
+document.getElementById('btn-add-vendor').addEventListener('click',function(){addVendor();});
 document.getElementById('btn-save-est').addEventListener('click',function(){saveEst();});
 document.getElementById('btn-print').addEventListener('click',function(){recalc();window.print();});
 document.getElementById('btn-email').addEventListener('click',function(){emailEst();});
@@ -703,6 +754,71 @@ function renderCatalog(){
         +'<td style="padding:9px 14px;text-align:center;"><button class="btn bred" onclick="deleteCatalogItem(\''+p.id+'\')">✕</button></td>'
         +'</tr>';
     }
+  }
+  html+='</tbody></table>';
+  div.innerHTML=html;
+}
+
+
+// ═══════════════════════════════
+// VENDORS
+// ═══════════════════════════════
+function esc(s){
+  return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
+function vendorTableHelp(){
+  return '<div class="rsec" style="border-color:#dc2626;background:#fff7f7;">'
+    +'<div style="font-weight:700;color:#dc2626;margin-bottom:6px;">Vendor table is not available yet.</div>'
+    +'<div style="font-size:13px;color:#5a7a9a;line-height:1.45;">Create a Supabase table named <strong>kqf_vendors</strong> with columns: <strong>id</strong>, <strong>created_at</strong>, <strong>name</strong>, <strong>rep</strong>, <strong>phone</strong>, <strong>email</strong>, <strong>website</strong>, and <strong>notes</strong>. Once that table exists and has the same permissions as your catalog and estimates tables, this tab will work.</div>'
+    +'</div>';
+}
+async function addVendor(){
+  var name=gv('v_name').trim();
+  if(!name){alert('Enter vendor name.');return;}
+  var item={id:Date.now(),name:name,rep:gv('v_rep'),phone:gv('v_phone'),email:gv('v_email'),website:gv('v_website'),notes:gv('v_notes')};
+  try{
+    await sbUpsert('kqf_vendors',[item]);
+    vendors.unshift(item);
+    vendorLoadError='';
+    sv('v_name','');sv('v_rep','');sv('v_phone','');sv('v_email','');sv('v_website','');sv('v_notes','');
+    renderVendors();
+    toast('Vendor saved ✓');
+  }catch(e){
+    vendorLoadError=e.message||'Vendor save failed.';
+    renderVendors();
+    toast('Vendor save failed',true);
+  }
+}
+async function deleteVendor(id){
+  try{
+    await sbDelete('kqf_vendors',id);
+    vendors=vendors.filter(function(v){return String(v.id)!==String(id);});
+    renderVendors();
+    toast('Vendor deleted');
+  }catch(e){toast('Vendor delete failed',true);}
+}
+function renderVendors(){
+  var div=document.getElementById('vendorList'); if(!div) return;
+  var html='';
+  if(vendorLoadError) html+=vendorTableHelp();
+  if(!vendors.length){
+    html+='<div class="empty"><p>No vendors saved yet.</p></div>';
+    div.innerHTML=html;
+    return;
+  }
+  html+='<table><thead><tr><th>Vendor</th><th>Rep</th><th>Phone</th><th>Email</th><th>Website</th><th></th></tr></thead><tbody>';
+  for(var i=0;i<vendors.length;i++){
+    var v=vendors[i];
+    var email=v.email?'<a href="mailto:'+esc(v.email)+'" style="color:#1a5a96;font-weight:700;">'+esc(v.email)+'</a>':'';
+    var website=v.website?'<a href="'+esc(v.website)+'" target="_blank" rel="noopener" style="color:#1a5a96;font-weight:700;">Open</a>':'';
+    html+='<tr>'
+      +'<td><div style="font-weight:700;color:#1a5a96;">'+esc(v.name)+'</div>'+(v.notes?'<div style="font-size:12px;color:#5a7a9a;margin-top:3px;">'+esc(v.notes)+'</div>':'')+'</td>'
+      +'<td>'+esc(v.rep)+'</td>'
+      +'<td>'+esc(v.phone)+'</td>'
+      +'<td>'+email+'</td>'
+      +'<td>'+website+'</td>'
+      +'<td style="text-align:center;"><button class="btn bred" onclick="deleteVendor(\''+v.id+'\')">✕</button></td>'
+      +'</tr>';
   }
   html+='</tbody></table>';
   div.innerHTML=html;
