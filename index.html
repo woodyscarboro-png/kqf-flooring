@@ -277,7 +277,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
   <h2>Vendors</h2>
   <p style="color:#7a8ba8;font-size:13px;margin-bottom:14px;">Store suppliers/vendors, account numbers, rep contacts, dealer phone numbers, vendor emails, websites, and notes. Saves to the cloud when the <strong>kqf_vendors</strong> table exists in Supabase.</p>
 
-  <h3>➕ Add Vendor</h3>
+  <h3 id="vendorFormTitle">➕ Add Vendor</h3>
   <table><tbody>
     <tr>
       <td class="lbl">Supplier / Vendor</td>
@@ -308,7 +308,10 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
       <td colspan="3"><textarea id="v_notes" rows="3" placeholder="Pricing notes, product lines, delivery details, login notes, special ordering details, etc." style="resize:vertical;"></textarea></td>
     </tr>
     <tr>
-      <td colspan="4" style="padding:8px 10px;"><button class="btn bgold" id="btn-add-vendor">+ Add Vendor</button></td>
+      <td colspan="4" style="padding:8px 10px;">
+        <button class="btn bgold" id="btn-add-vendor">+ Add Vendor</button>
+        <button class="btn bline" id="btn-cancel-vendor-edit" type="button" style="display:none;margin-left:8px;">Cancel Edit</button>
+      </td>
     </tr>
   </tbody></table>
 
@@ -490,6 +493,7 @@ async function sbDeleteWhere(table, field, value){
 // STATE
 // ═══════════════════════════════
 var rooms=[], saved=[], catalog=[], vendors=[], vendorModules=[], vendorProducts=[], rid=0, vendorLoadError="", moduleLoadError="";
+var editingVendorId=null;
 
 var CAT_LABELS={
   hardwood:'Solid Hardwood',engineered:'Engineered Hardwood',laminate:'Laminate',
@@ -652,6 +656,7 @@ document.getElementById('btn-add-room').addEventListener('click',function(){addR
 document.getElementById('btn-add-cat').addEventListener('click',function(){addCatalogItem();});
 document.getElementById('btn-vendors').addEventListener('click',function(){go('vendors');});
 document.getElementById('btn-add-vendor').addEventListener('click',function(){addVendor();});
+document.getElementById('btn-cancel-vendor-edit').addEventListener('click',function(){clearVendorForm();});
 document.getElementById('btn-add-module').addEventListener('click',function(){addVendorModule();});
 document.getElementById('module_csv_import').addEventListener('change',function(){importModuleCSV(this);});
 document.getElementById('btn-save-est').addEventListener('click',function(){saveEst();});
@@ -845,18 +850,67 @@ function vendorTableHelp(){
     +'<div style="font-size:13px;color:#5a7a9a;line-height:1.45;">Create or update the Supabase table named <strong>kqf_vendors</strong> with columns: <strong>id</strong>, <strong>created_at</strong>, <strong>name</strong>, <strong>account_number</strong>, <strong>rep</strong>, <strong>phone</strong>, <strong>email</strong>, <strong>dealer_phone</strong>, <strong>dealer_email</strong>, <strong>website</strong>, and <strong>notes</strong>. Once that table exists and has public anon permissions, this tab will work.</div>'
     +'</div>';
 }
+function normalizeUrl(url){
+  url=String(url||'').trim();
+  if(!url) return '';
+  if(!/^https?:\/\//i.test(url)) url='https://'+url;
+  return url;
+}
+function cleanPhoneForLink(phone){
+  phone=String(phone||'').trim();
+  return phone.replace(/[^0-9+]/g,'');
+}
+function phoneLink(phone){
+  phone=String(phone||'').trim();
+  if(!phone) return '';
+  var cleaned=cleanPhoneForLink(phone);
+  return '<a href="tel:'+esc(cleaned)+'" style="color:#1a5a96;font-weight:700;">'+esc(phone)+'</a>';
+}
+function emailLink(email){
+  email=String(email||'').trim();
+  if(!email) return '';
+  return '<a href="mailto:'+esc(email)+'" style="color:#1a5a96;font-weight:700;">'+esc(email)+'</a>';
+}
+function websiteLink(url){
+  url=normalizeUrl(url);
+  if(!url) return '';
+  return '<a href="'+esc(url)+'" target="_blank" rel="noopener" style="color:#1a5a96;font-weight:700;">Open Website</a>';
+}
+function clearVendorForm(){
+  editingVendorId=null;
+  sv('v_name','');sv('v_account','');sv('v_rep','');sv('v_phone','');sv('v_email','');sv('v_dealer_phone','');sv('v_dealer_email','');sv('v_website','');sv('v_notes','');
+  var title=document.getElementById('vendorFormTitle'); if(title) title.textContent='➕ Add Vendor';
+  var btn=document.getElementById('btn-add-vendor'); if(btn) btn.textContent='+ Add Vendor';
+  var cancel=document.getElementById('btn-cancel-vendor-edit'); if(cancel) cancel.style.display='none';
+}
+function editVendor(id){
+  var v=null;
+  for(var i=0;i<vendors.length;i++){ if(String(vendors[i].id)===String(id)){v=vendors[i];break;} }
+  if(!v) return;
+  editingVendorId=String(v.id);
+  sv('v_name',v.name);sv('v_account',v.account_number);sv('v_rep',v.rep);sv('v_phone',v.phone);sv('v_email',v.email);sv('v_dealer_phone',v.dealer_phone);sv('v_dealer_email',v.dealer_email);sv('v_website',v.website);sv('v_notes',v.notes);
+  var title=document.getElementById('vendorFormTitle'); if(title) title.textContent='✏️ Edit Vendor';
+  var btn=document.getElementById('btn-add-vendor'); if(btn) btn.textContent='Save Vendor Changes';
+  var cancel=document.getElementById('btn-cancel-vendor-edit'); if(cancel) cancel.style.display='inline-block';
+  go('vendors');
+  setTimeout(function(){var el=document.getElementById('v_name');if(el)el.focus();},80);
+}
 async function addVendor(){
   var name=gv('v_name').trim();
   if(!name){alert('Enter supplier / vendor name.');return;}
-  var item={id:String(Date.now()),name:name,account_number:gv('v_account'),rep:gv('v_rep'),phone:gv('v_phone'),email:gv('v_email'),dealer_phone:gv('v_dealer_phone'),dealer_email:gv('v_dealer_email'),website:gv('v_website'),notes:gv('v_notes')};
+  var item={id:editingVendorId||String(Date.now()),name:name,account_number:gv('v_account'),rep:gv('v_rep'),phone:gv('v_phone'),email:gv('v_email'),dealer_phone:gv('v_dealer_phone'),dealer_email:gv('v_dealer_email'),website:gv('v_website'),notes:gv('v_notes')};
   try{
     await sbUpsert('kqf_vendors',[item]);
-    vendors.unshift(item);
+    var updated=false;
+    for(var i=0;i<vendors.length;i++){
+      if(String(vendors[i].id)===String(item.id)){vendors[i]=item;updated=true;break;}
+    }
+    if(!updated) vendors.unshift(item);
     vendorLoadError='';
-    sv('v_name','');sv('v_account','');sv('v_rep','');sv('v_phone','');sv('v_email','');sv('v_dealer_phone','');sv('v_dealer_email','');sv('v_website','');sv('v_notes','');
+    clearVendorForm();
     renderVendors();
     renderModuleVendorSelects();
-    toast('Vendor saved ✓');
+    toast(updated?'Vendor updated ✓':'Vendor saved ✓');
   }catch(e){
     vendorLoadError=e.message||'Vendor save failed.';
     renderVendors();
@@ -864,9 +918,12 @@ async function addVendor(){
   }
 }
 async function deleteVendor(id){
+  var ok=confirm('Delete this vendor?');
+  if(!ok) return;
   try{
     await sbDelete('kqf_vendors',id);
     vendors=vendors.filter(function(v){return String(v.id)!==String(id);});
+    if(String(editingVendorId)===String(id)) clearVendorForm();
     renderVendors();
     renderModuleVendorSelects();
     renderModules();
@@ -882,25 +939,22 @@ function renderVendors(){
     div.innerHTML=html;
     return;
   }
-  html+='<table><thead><tr><th>Supplier / Vendor</th><th>Account #</th><th>Rep</th><th>Rep Phone / Email</th><th>Dealer Phone</th><th>Vendor Email</th><th>Website</th><th></th></tr></thead><tbody>';
+  html+='<table><thead><tr><th>Supplier / Vendor</th><th>Account #</th><th>Rep</th><th>Rep Phone / Email</th><th>Dealer Phone</th><th>Vendor Email</th><th>Website</th><th>Actions</th></tr></thead><tbody>';
   for(var i=0;i<vendors.length;i++){
     var v=vendors[i];
-    var repEmail=v.email?'<a href="mailto:'+esc(v.email)+'" style="color:#1a5a96;font-weight:700;">'+esc(v.email)+'</a>':'';
-    var vendorEmail=v.dealer_email?'<a href="mailto:'+esc(v.dealer_email)+'" style="color:#1a5a96;font-weight:700;">'+esc(v.dealer_email)+'</a>':'';
-    var website=v.website?'<a href="'+esc(v.website)+'" target="_blank" rel="noopener" style="color:#1a5a96;font-weight:700;">Open</a>':'';
-    var accountText=v.account_number?'Acct: '+esc(v.account_number):'';
     var repContact=[];
-    if(v.phone) repContact.push(esc(v.phone));
-    if(repEmail) repContact.push(repEmail);
+    if(v.phone) repContact.push(phoneLink(v.phone));
+    if(v.email) repContact.push(emailLink(v.email));
+    var accountText=v.account_number?'Acct: '+esc(v.account_number):'';
     html+='<tr>'
       +'<td><div style="font-weight:700;color:#1a5a96;">'+esc(v.name)+'</div>'+(v.notes?'<div style="font-size:12px;color:#5a7a9a;margin-top:3px;line-height:1.35;">'+esc(v.notes)+'</div>':'')+'</td>'
       +'<td>'+accountText+'</td>'
       +'<td>'+esc(v.rep)+'</td>'
       +'<td>'+repContact.join('<br>')+'</td>'
-      +'<td>'+esc(v.dealer_phone)+'</td>'
-      +'<td>'+vendorEmail+'</td>'
-      +'<td>'+website+'</td>'
-      +'<td style="text-align:center;"><button class="btn bred" onclick="deleteVendor(\''+v.id+'\')">✕</button></td>'
+      +'<td>'+phoneLink(v.dealer_phone)+'</td>'
+      +'<td>'+emailLink(v.dealer_email)+'</td>'
+      +'<td>'+websiteLink(v.website)+'</td>'
+      +'<td style="text-align:center;white-space:nowrap;"><button class="btn bline" style="font-size:12px;padding:5px 10px;margin-right:5px;" onclick="editVendor(\''+esc(v.id)+'\')">Edit</button><button class="btn bred" onclick="deleteVendor(\''+esc(v.id)+'\')">✕</button></td>'
       +'</tr>';
   }
   html+='</tbody></table>';
