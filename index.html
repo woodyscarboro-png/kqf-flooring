@@ -103,6 +103,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
   <button id="tab-rooms">Rooms</button>
   <button id="tab-catalog">Catalog</button>
   <button id="tab-vendors">Vendors</button>
+  <button id="tab-modules">Vendor Modules</button>
   <button id="tab-totals">Totals</button>
   <button id="tab-saved">Saved</button>
 </div>
@@ -315,6 +316,58 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
   <div id="vendorList"><div class="loading">Loading vendors from cloud...</div></div>
 </div>
 
+
+<!-- VENDOR MODULES -->
+<div class="page" id="p-modules">
+  <h2>Vendor Product Modules</h2>
+  <p style="color:#7a8ba8;font-size:13px;margin-bottom:14px;">Use this area for vendor-specific price sheets. Create one module per vendor/category, then import that company’s CSV into the module. The regular Catalog tab can stay for labor, removal, underlayment, quarter round, prep, and general services.</p>
+
+  <h3>➕ Create Module</h3>
+  <table><tbody>
+    <tr>
+      <td class="lbl">Vendor</td>
+      <td><select id="m_vendor"><option value="">— Select Vendor —</option></select></td>
+      <td class="lbl">Module Name</td>
+      <td><input type="text" id="m_name" placeholder="e.g. Carpet Pricing, Ceramic Tile, Laminate Trim"></td>
+    </tr>
+    <tr>
+      <td class="lbl">Product Type</td>
+      <td><select id="m_type">
+        <option value="carpet">Carpet</option>
+        <option value="lvp">LVP / LVT</option>
+        <option value="laminate">Laminate</option>
+        <option value="hardwood">Hardwood / Engineered</option>
+        <option value="tile">Tile / Ceramic</option>
+        <option value="trim">Trim / Moldings</option>
+        <option value="sheet_vinyl">Sheet Vinyl</option>
+        <option value="other">Other</option>
+      </select></td>
+      <td class="lbl">Source / Notes</td>
+      <td><input type="text" id="m_source" placeholder="e.g. Mohawk 8.13, Shaw ceramic PDF, Mannington trim guide"></td>
+    </tr>
+    <tr>
+      <td colspan="4" style="padding:8px 10px;"><button class="btn bgold" id="btn-add-module">+ Create Module</button></td>
+    </tr>
+  </tbody></table>
+
+  <h3>📥 Import CSV into Module</h3>
+  <table><tbody>
+    <tr>
+      <td class="lbl">Select Module</td>
+      <td><select id="import_module"><option value="">— Select Module —</option></select></td>
+      <td class="lbl">CSV File</td>
+      <td><label style="cursor:pointer;"><span class="btn bgold">📂 Import CSV</span><input type="file" id="module_csv_import" accept=".csv" style="display:none;"></label></td>
+    </tr>
+    <tr><td colspan="4"><div id="module_import_status" style="font-size:13px;color:#1a5a96;font-weight:700;"></div></td></tr>
+  </tbody></table>
+
+  <h3>📦 Module List</h3>
+  <div id="moduleList"><div class="loading">Loading vendor modules from cloud...</div></div>
+
+  <h3>📋 Module Products</h3>
+  <div id="moduleProductList"><div class="empty"><p>Select a module and click View Products.</p></div></div>
+</div>
+
 <!-- TOTALS -->
 <div class="page" id="p-totals">
   <h2>Estimate Summary</h2>
@@ -425,10 +478,18 @@ async function sbDelete(table, id){
   if(!r.ok){var t=await r.text();throw new Error(t);}
 }
 
+async function sbDeleteWhere(table, field, value){
+  var r = await fetch(SB_URL + '/rest/v1/' + table + '?' + encodeURIComponent(field) + '=eq.' + encodeURIComponent(value), {
+    method: 'DELETE',
+    headers: sbHeaders()
+  });
+  if(!r.ok){var t=await r.text();throw new Error(t);}
+}
+
 // ═══════════════════════════════
 // STATE
 // ═══════════════════════════════
-var rooms=[], saved=[], catalog=[], vendors=[], rid=0, vendorLoadError="";
+var rooms=[], saved=[], catalog=[], vendors=[], vendorModules=[], vendorProducts=[], rid=0, vendorLoadError="", moduleLoadError="";
 
 var CAT_LABELS={
   hardwood:'Solid Hardwood',engineered:'Engineered Hardwood',laminate:'Laminate',
@@ -565,7 +626,7 @@ async function init(){
 // NAVIGATION
 // ═══════════════════════════════
 function go(name){
-  var names=['client','rooms','catalog','vendors','totals','saved'];
+  var names=['client','rooms','catalog','vendors','modules','totals','saved'];
   for(var i=0;i<names.length;i++){
     document.getElementById('tab-'+names[i]).className=(names[i]===name)?'on':'';
     document.getElementById('p-'+names[i]).className='page'+(names[i]===name?' on':'');
@@ -574,6 +635,7 @@ function go(name){
   if(name==='saved')  renderSaved();
   if(name==='catalog') renderCatalog();
   if(name==='vendors') renderVendors();
+  if(name==='modules'){renderModuleVendorSelects();renderModules();}
   window.scrollTo(0,0);
 }
 
@@ -581,6 +643,7 @@ document.getElementById('tab-client').addEventListener('click',function(){go('cl
 document.getElementById('tab-rooms').addEventListener('click',function(){go('rooms');});
 document.getElementById('tab-catalog').addEventListener('click',function(){go('catalog');});
 document.getElementById('tab-vendors').addEventListener('click',function(){go('vendors');});
+document.getElementById('tab-modules').addEventListener('click',function(){go('modules');});
 document.getElementById('tab-totals').addEventListener('click',function(){go('totals');});
 document.getElementById('tab-saved').addEventListener('click',function(){go('saved');});
 document.getElementById('btn-next-rooms').addEventListener('click',function(){go('rooms');});
@@ -589,6 +652,8 @@ document.getElementById('btn-add-room').addEventListener('click',function(){addR
 document.getElementById('btn-add-cat').addEventListener('click',function(){addCatalogItem();});
 document.getElementById('btn-vendors').addEventListener('click',function(){go('vendors');});
 document.getElementById('btn-add-vendor').addEventListener('click',function(){addVendor();});
+document.getElementById('btn-add-module').addEventListener('click',function(){addVendorModule();});
+document.getElementById('module_csv_import').addEventListener('change',function(){importModuleCSV(this);});
 document.getElementById('btn-save-est').addEventListener('click',function(){saveEst();});
 document.getElementById('btn-print').addEventListener('click',function(){recalc();window.print();});
 document.getElementById('btn-email').addEventListener('click',function(){emailEst();});
@@ -790,6 +855,7 @@ async function addVendor(){
     vendorLoadError='';
     sv('v_name','');sv('v_account','');sv('v_rep','');sv('v_phone','');sv('v_email','');sv('v_dealer_phone','');sv('v_dealer_email','');sv('v_website','');sv('v_notes','');
     renderVendors();
+    renderModuleVendorSelects();
     toast('Vendor saved ✓');
   }catch(e){
     vendorLoadError=e.message||'Vendor save failed.';
@@ -802,6 +868,8 @@ async function deleteVendor(id){
     await sbDelete('kqf_vendors',id);
     vendors=vendors.filter(function(v){return String(v.id)!==String(id);});
     renderVendors();
+    renderModuleVendorSelects();
+    renderModules();
     toast('Vendor deleted');
   }catch(e){toast('Vendor delete failed',true);}
 }
@@ -836,6 +904,261 @@ function renderVendors(){
       +'</tr>';
   }
   html+='</tbody></table>';
+  div.innerHTML=html;
+}
+
+
+// ═══════════════════════════════
+// VENDOR PRODUCT MODULES
+// ═══════════════════════════════
+function moduleTableHelp(){
+  return '<div class="rsec" style="border-color:#dc2626;background:#fff7f7;">'
+    +'<div style="font-weight:700;color:#dc2626;margin-bottom:6px;">Vendor module tables are not available yet.</div>'
+    +'<div style="font-size:13px;color:#5a7a9a;line-height:1.45;">Create the Supabase tables <strong>kqf_vendor_modules</strong> and <strong>kqf_vendor_products</strong>, then refresh this page. The import framework will work after those tables exist and have anon permissions.</div>'
+    +'</div>';
+}
+function getVendorNameById(id){
+  for(var i=0;i<vendors.length;i++) if(String(vendors[i].id)===String(id)) return vendors[i].name||'';
+  return '';
+}
+function getModuleById(id){
+  for(var i=0;i<vendorModules.length;i++) if(String(vendorModules[i].id)===String(id)) return vendorModules[i];
+  return null;
+}
+function renderModuleVendorSelects(){
+  var vendorSel=document.getElementById('m_vendor');
+  if(vendorSel){
+    var cur=vendorSel.value;
+    var html='<option value="">— Select Vendor —</option>';
+    for(var i=0;i<vendors.length;i++) html+='<option value="'+esc(vendors[i].id)+'">'+esc(vendors[i].name)+'</option>';
+    vendorSel.innerHTML=html;
+    if(cur) vendorSel.value=cur;
+  }
+  var moduleSel=document.getElementById('import_module');
+  if(moduleSel){
+    var curm=moduleSel.value;
+    var mhtml='<option value="">— Select Module —</option>';
+    for(var j=0;j<vendorModules.length;j++){
+      var m=vendorModules[j];
+      mhtml+='<option value="'+esc(m.id)+'">'+esc((m.vendor_name||'Vendor')+' — '+(m.module_name||'Module'))+'</option>';
+    }
+    moduleSel.innerHTML=mhtml;
+    if(curm) moduleSel.value=curm;
+  }
+}
+async function addVendorModule(){
+  var vendorId=gv('m_vendor');
+  var moduleName=gv('m_name').trim();
+  if(!vendorId){alert('Select a vendor first.');return;}
+  if(!moduleName){alert('Enter a module name.');return;}
+  var vendorName=getVendorNameById(vendorId);
+  var item={
+    id:String(Date.now()),
+    vendor_id:vendorId,
+    vendor_name:vendorName,
+    module_name:moduleName,
+    product_type:gv('m_type')||'other',
+    source_file:gv('m_source'),
+    notes:'',
+    product_count:0
+  };
+  try{
+    await sbUpsert('kqf_vendor_modules',[item]);
+    vendorModules.unshift(item);
+    moduleLoadError='';
+    sv('m_name','');sv('m_source','');
+    renderModuleVendorSelects();
+    renderModules();
+    toast('Module created ✓');
+  }catch(e){
+    moduleLoadError=e.message||'Module save failed.';
+    renderModules();
+    toast('Module save failed',true);
+  }
+}
+async function deleteVendorModule(id){
+  if(!confirm('Delete this module and its imported product rows?')) return;
+  try{
+    await sbDeleteWhere('kqf_vendor_products','module_id',id);
+    await sbDelete('kqf_vendor_modules',id);
+    vendorModules=vendorModules.filter(function(m){return String(m.id)!==String(id);});
+    vendorProducts=vendorProducts.filter(function(p){return String(p.module_id)!==String(id);});
+    renderModuleVendorSelects();
+    renderModules();
+    renderModuleProducts('');
+    toast('Module deleted');
+  }catch(e){toast('Module delete failed',true);}
+}
+function renderModules(){
+  var div=document.getElementById('moduleList'); if(!div) return;
+  var html='';
+  if(moduleLoadError) html+=moduleTableHelp();
+  if(!vendorModules.length){
+    html+='<div class="empty"><p>No vendor modules created yet.</p></div>';
+    div.innerHTML=html;
+    return;
+  }
+  html+='<table><thead><tr><th>Vendor</th><th>Module</th><th>Type</th><th>Source</th><th style="text-align:right;">Products</th><th></th></tr></thead><tbody>';
+  for(var i=0;i<vendorModules.length;i++){
+    var m=vendorModules[i];
+    var count=vendorProducts.filter(function(p){return String(p.module_id)===String(m.id);}).length || parseInt(m.product_count||0)||0;
+    html+='<tr>'
+      +'<td><strong style="color:#1a5a96;">'+esc(m.vendor_name)+'</strong></td>'
+      +'<td>'+esc(m.module_name)+'</td>'
+      +'<td>'+esc(m.product_type)+'</td>'
+      +'<td>'+esc(m.source_file)+'</td>'
+      +'<td style="text-align:right;font-weight:700;">'+count+'</td>'
+      +'<td style="text-align:right;"><button class="btn bline" onclick="renderModuleProducts(\''+esc(m.id)+'\')">View Products</button> <button class="btn bred" onclick="deleteVendorModule(\''+esc(m.id)+'\')">✕</button></td>'
+      +'</tr>';
+  }
+  html+='</tbody></table>';
+  div.innerHTML=html;
+}
+function parseCSVLine(line){
+  var out=[],cur='',q=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(ch==='"'){
+      if(q && line[i+1]==='"'){cur+='"';i++;}
+      else q=!q;
+    }else if(ch===',' && !q){out.push(cur);cur='';}
+    else cur+=ch;
+  }
+  out.push(cur);
+  return out;
+}
+function parseCSVText(text){
+  text=String(text||'').replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  var rows=[],line='',q=false;
+  for(var i=0;i<text.length;i++){
+    var ch=text[i];
+    if(ch==='"'){
+      if(q && text[i+1]==='"'){line+='"';i++;}
+      else {q=!q; line+=ch;}
+    }else if(ch==='\n' && !q){rows.push(line);line='';}
+    else line+=ch;
+  }
+  if(line.trim()!=='') rows.push(line);
+  if(!rows.length) return [];
+  var headers=parseCSVLine(rows[0]).map(function(h){return String(h||'').replace(/\u00a0/g,' ').trim();});
+  var data=[];
+  for(var r=1;r<rows.length;r++){
+    if(!rows[r].trim()) continue;
+    var vals=parseCSVLine(rows[r]);
+    var obj={};
+    for(var c=0;c<headers.length;c++) obj[headers[c]||('Column '+(c+1))]=(vals[c]||'').trim();
+    data.push(obj);
+  }
+  return data;
+}
+function cleanKey(k){return String(k||'').toLowerCase().replace(/\u00a0/g,' ').replace(/[^a-z0-9]+/g,' ').trim();}
+function pickField(row,names){
+  var keys=Object.keys(row||{});
+  for(var i=0;i<names.length;i++){
+    var target=cleanKey(names[i]);
+    for(var k=0;k<keys.length;k++) if(cleanKey(keys[k])===target) return row[keys[k]];
+  }
+  for(var i2=0;i2<names.length;i2++){
+    var t=cleanKey(names[i2]);
+    for(var k2=0;k2<keys.length;k2++) if(cleanKey(keys[k2]).indexOf(t)>-1 || t.indexOf(cleanKey(keys[k2]))>-1) return row[keys[k2]];
+  }
+  return '';
+}
+function priceNum(v){
+  var n=parseFloat(String(v||'').replace(/[^0-9.\-]/g,''));
+  return isNaN(n)?null:n;
+}
+function normalizeVendorProduct(row,module,fileName,idx){
+  var style=pickField(row,['Style Name','Style','Name','Product Name','Product']);
+  var sku=pickField(row,['Style #','Number','SKU','Style Number','Item #','Item']);
+  if(!style && sku) style=sku;
+  var uom=pickField(row,['UOM','Unit','Unnamed: 3','SY','SQF']);
+  var sqft=priceNum(pickField(row,['KQF PRICING','KQF Price','SQ FT $ KQF PRICING','Sq Ft Price','Price CART $','CART $','Roll Price (Sq. Ft.)']));
+  var roll=priceNum(pickField(row,['Roll Price','Roll $','Roll Price (Sq. Yd.)']));
+  var cut=priceNum(pickField(row,['Cut Price','Cut $','Cut Price (Sq. Yd.)']));
+  var sqyd=roll;
+  return {
+    id:String(Date.now())+'-'+idx+'-'+Math.floor(Math.random()*100000),
+    module_id:module.id,
+    vendor_id:module.vendor_id,
+    vendor_name:module.vendor_name,
+    module_name:module.module_name,
+    product_type:module.product_type,
+    style_name:style,
+    sku:sku,
+    color:pickField(row,['Color','Colors']),
+    size:pickField(row,['Size','Length']),
+    category:pickField(row,['Category','Division']),
+    type:pickField(row,['Type']),
+    roll_price:roll,
+    cut_price:cut,
+    sqyd_price:sqyd,
+    sqft_price:sqft,
+    carton_qty:priceNum(pickField(row,['Carton','SQF/ Carton','SQF Carton'])),
+    pcs_per_carton:priceNum(pickField(row,['Pcs / Carton','Pcs Carton'])),
+    uom:uom,
+    source_file:fileName||module.source_file||'',
+    notes:'',
+    raw_data:row
+  };
+}
+async function importModuleCSV(input){
+  var moduleId=gv('import_module');
+  var status=document.getElementById('module_import_status');
+  if(status) status.textContent='';
+  if(!moduleId){alert('Select the module you want to import into first.'); input.value=''; return;}
+  if(!input.files || !input.files[0]) return;
+  var module=getModuleById(moduleId);
+  if(!module){alert('Module not found.'); input.value=''; return;}
+  var file=input.files[0];
+  var text=await file.text();
+  var rows=parseCSVText(text);
+  if(!rows.length){alert('No rows found in this CSV.'); input.value=''; return;}
+  var products=[];
+  for(var i=0;i<rows.length;i++){
+    var p=normalizeVendorProduct(rows[i],module,file.name,i);
+    if(p.style_name || p.sku) products.push(p);
+  }
+  if(!products.length){alert('No usable product rows found.'); input.value=''; return;}
+  try{
+    await sbUpsert('kqf_vendor_products',products);
+    vendorProducts=products.concat(vendorProducts);
+    module.product_count=(parseInt(module.product_count||0)||0)+products.length;
+    module.source_file=file.name;
+    await sbUpsert('kqf_vendor_modules',[module]);
+    if(status) status.textContent='Imported '+products.length+' products into '+module.module_name+'.';
+    renderModules();
+    renderModuleProducts(module.id);
+    toast('CSV imported ✓');
+  }catch(e){
+    if(status) status.textContent='Import failed: '+(e.message||e);
+    toast('CSV import failed',true);
+  }
+  input.value='';
+}
+function renderModuleProducts(moduleId){
+  var div=document.getElementById('moduleProductList'); if(!div) return;
+  if(!moduleId){div.innerHTML='<div class="empty"><p>Select a module and click View Products.</p></div>';return;}
+  var module=getModuleById(moduleId);
+  var items=vendorProducts.filter(function(p){return String(p.module_id)===String(moduleId);});
+  if(!items.length){div.innerHTML='<div class="empty"><p>No products imported for this module yet.</p></div>';return;}
+  var html='<div class="tcard" style="border-color:#d1e3f5;"><div style="font-weight:700;color:#1a5a96;font-size:16px;">'+esc(module?module.vendor_name+' — '+module.module_name:'Module Products')+'</div></div>';
+  html+='<table><thead><tr><th>Style / Product</th><th>SKU</th><th>Category</th><th>Roll</th><th>Cut</th><th>KQF / Sq Ft</th><th>UOM</th><th>Source</th></tr></thead><tbody>';
+  for(var i=0;i<items.length && i<300;i++){
+    var p=items[i];
+    html+='<tr>'
+      +'<td><strong style="color:#1a5a96;">'+esc(p.style_name)+'</strong>'+(p.color?'<div style="font-size:12px;color:#5a7a9a;">Colors: '+esc(p.color)+'</div>':'')+'</td>'
+      +'<td>'+esc(p.sku)+'</td>'
+      +'<td>'+esc(p.category||p.product_type||'')+'</td>'
+      +'<td>'+((p.roll_price!==null&&p.roll_price!==undefined)?'$'+Number(p.roll_price).toFixed(2):'')+'</td>'
+      +'<td>'+((p.cut_price!==null&&p.cut_price!==undefined)?'$'+Number(p.cut_price).toFixed(2):'')+'</td>'
+      +'<td>'+((p.sqft_price!==null&&p.sqft_price!==undefined)?'$'+Number(p.sqft_price).toFixed(2):'')+'</td>'
+      +'<td>'+esc(p.uom)+'</td>'
+      +'<td>'+esc(p.source_file)+'</td>'
+      +'</tr>';
+  }
+  html+='</tbody></table>';
+  if(items.length>300) html+='<div class="empty" style="padding:12px;">Showing first 300 of '+items.length+' products.</div>';
   div.innerHTML=html;
 }
 
