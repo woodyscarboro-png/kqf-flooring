@@ -91,7 +91,7 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
 #p-vendors .vendor-list-title{background:#c4d8f4;border-left:5px solid #1a5a96;color:#0b3b78;margin-top:16px;margin-bottom:0;border-radius:0;}
 #vendorList{background:#fff;border:1px solid #d1e3f5;border-radius:0 0 10px 10px;overflow:visible;box-shadow:0 1px 4px rgba(26,90,150,0.08);}
 .vendor-list-grid{width:100%;}
-.vendor-list-head,.vendor-row{display:grid;grid-template-columns:minmax(190px,1.35fr) minmax(130px,.72fr) minmax(145px,.82fr) minmax(135px,.72fr) minmax(205px,1.15fr) minmax(135px,.72fr) minmax(210px,1.15fr) minmax(145px,.78fr) minmax(74px,.38fr);align-items:center;column-gap:14px;}
+.vendor-list-head,.vendor-row{display:grid;grid-template-columns:minmax(220px,1.65fr) minmax(112px,.64fr) minmax(130px,.76fr) minmax(120px,.68fr) 72px minmax(120px,.68fr) 78px 68px minmax(122px,.62fr);align-items:center;column-gap:10px;}
 .vendor-list-head{position:sticky;top:var(--vendor-sticky-top);z-index:260;background:#9fbfe8;color:#082f63;border-top:2px solid #1a5a96;border-bottom:2px solid #1a5a96;box-shadow:0 3px 8px rgba(26,90,150,0.28);}
 .vendor-list-head div{font-size:10px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;padding:8px 8px;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .vendor-row{min-height:40px;border-bottom:1px solid #dfeaf8;}
@@ -102,12 +102,13 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
 .vendor-name{font-size:12.5px;font-weight:600;color:#1a5a96;line-height:1.12;}
 .vendor-notes{font-size:10.5px;color:#5a7a9a;margin-top:2px;line-height:1.18;font-weight:400;}
 .v-link,.vendor-link{color:#1a5a96;font-size:12px;font-weight:400;text-decoration:underline;white-space:nowrap;}
+.v-email-link,.v-web-link{display:inline-block;min-width:42px;text-align:left;font-size:12px;font-weight:400;}
 .vendor-account,.vendor-rep{font-size:12px;font-weight:400;color:#1a2332;}
 .vendor-actions{text-align:right;white-space:nowrap;padding-right:8px;overflow:visible;}
 .vendor-edit,.vendor-del{font-size:10.5px;padding:2px 6px;border-width:1px;border-radius:5px;line-height:1.2;min-width:0;}
 .vendor-edit{margin-right:3px;}
 .vendor-del{padding:2px 6px;}
-@media(max-width:1250px){#vendorList{overflow-x:auto;}.vendor-list-grid{min-width:1340px;}.vendor-list-head{top:var(--vendor-sticky-top);}}
+@media(max-width:1180px){#vendorList{overflow-x:auto;}.vendor-list-grid{min-width:1180px;}.vendor-list-head{top:var(--vendor-sticky-top);}}
 
 
 #vendor-activity-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9500;align-items:center;justify-content:center;padding:18px;}
@@ -965,12 +966,12 @@ function normalizeEmail(email){
 function emailLink(email,vendorId,label){
   email=normalizeEmail(email);
   if(!email) return '';
-  return '<a class="v-link" href="#" onclick="vendorContactClick(\''+esc(vendorId)+'\',\'email\',\''+esc(label)+'\',\''+esc(email)+'\');return false;">'+esc(email)+'</a>';
+  return '<a class="v-link v-email-link" href="#" title="'+esc(email)+'" onclick="vendorContactClick(\''+esc(vendorId)+'\',\'email\',\''+esc(label)+'\',\''+esc(email)+'\');return false;">Email</a>';
 }
 function websiteLink(url){
   url=normalizeUrl(url);
   if(!url) return '';
-  return '<a class="v-link" href="'+esc(url)+'" target="_blank" rel="noopener">Open Website</a>';
+  return '<a class="v-link v-web-link" href="'+esc(url)+'" title="'+esc(url)+'" target="_blank" rel="noopener">Open</a>';
 }
 function activityTableHelp(){
   return '<div class="rsec" style="border-color:#dc2626;background:#fff7f7;">'
