@@ -80,6 +80,25 @@ input[type=radio]{width:18px;height:18px;accent-color:#1a5a96;padding:0;cursor:p
 #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(100px);background:#34c47c;color:#000;font-weight:700;font-size:14px;padding:11px 26px;border-radius:26px;z-index:9999;transition:transform 0.25s;pointer-events:none;}
 #toast.show{transform:translateX(-50%) translateY(0);}
 .loading{text-align:center;padding:30px;color:#7a8ba8;font-size:14px;}
+
+/* Vendor page wide-screen layout */
+#p-vendors{width:calc(100vw - 36px);margin-left:calc(50% - 50vw + 18px);margin-right:calc(50% - 50vw + 18px);}
+#p-vendors h2,#p-vendors h3,#p-vendors p,#p-vendors > table,#vendorList{max-width:none;width:100%;}
+#p-vendors > table td{padding:5px 8px;}
+#p-vendors > table .lbl{width:145px;font-size:12px;}
+#p-vendors > table input,#p-vendors > table textarea{font-size:13px;padding:7px 9px;}
+.vendor-table{width:100%;table-layout:fixed;font-size:12px;}
+.vendor-table th{position:sticky;top:112px;z-index:160;background:#e8f0fe;font-size:10px;letter-spacing:2px;padding:7px 8px;white-space:nowrap;}
+.vendor-table td{font-size:12px;padding:6px 8px;line-height:1.18;vertical-align:middle;}
+.vendor-table .v-name{font-weight:600;color:#1a5a96;font-size:13px;line-height:1.12;}
+.vendor-table .v-notes{font-size:11px;color:#5a7a9a;margin-top:2px;line-height:1.22;}
+.vendor-table .v-link{color:#1a5a96;font-weight:400;text-decoration:underline;white-space:nowrap;}
+.vendor-table .v-account,.vendor-table .v-rep{font-weight:400;color:#1a2332;}
+.vendor-table .v-actions{text-align:center;white-space:nowrap;}
+.vendor-table .v-edit{font-size:11px;padding:3px 7px;margin-right:3px;border-width:1px;}
+.vendor-table .v-del{font-size:11px;padding:3px 7px;border-width:1px;}
+@media(max-width:900px){.vendor-table{min-width:1050px;}#vendorList{overflow-x:auto;}.vendor-table th{top:112px;}}
+
 </style>
 </head>
 <body>
@@ -864,17 +883,17 @@ function phoneLink(phone){
   phone=String(phone||'').trim();
   if(!phone) return '';
   var cleaned=cleanPhoneForLink(phone);
-  return '<a href="tel:'+esc(cleaned)+'" style="color:#1a5a96;font-weight:700;">'+esc(phone)+'</a>';
+  return '<a class="v-link" href="tel:'+esc(cleaned)+'">'+esc(phone)+'</a>';
 }
 function emailLink(email){
   email=String(email||'').trim();
   if(!email) return '';
-  return '<a href="mailto:'+esc(email)+'" style="color:#1a5a96;font-weight:700;">'+esc(email)+'</a>';
+  return '<a class="v-link" href="mailto:'+esc(email)+'">'+esc(email)+'</a>';
 }
 function websiteLink(url){
   url=normalizeUrl(url);
   if(!url) return '';
-  return '<a href="'+esc(url)+'" target="_blank" rel="noopener" style="color:#1a5a96;font-weight:700;">Open Website</a>';
+  return '<a class="v-link" href="'+esc(url)+'" target="_blank" rel="noopener">Open Website</a>';
 }
 function clearVendorForm(){
   editingVendorId=null;
@@ -939,7 +958,9 @@ function renderVendors(){
     div.innerHTML=html;
     return;
   }
-  html+='<table><thead><tr><th>Supplier / Vendor</th><th>Account #</th><th>Rep</th><th>Rep Phone / Email</th><th>Dealer Phone</th><th>Vendor Email</th><th>Website</th><th>Actions</th></tr></thead><tbody>';
+  html+='<table class="vendor-table"><colgroup>'
+    +'<col style="width:18%"><col style="width:11%"><col style="width:12%"><col style="width:18%"><col style="width:12%"><col style="width:15%"><col style="width:9%"><col style="width:5%">'
+    +'</colgroup><thead><tr><th>Supplier / Vendor</th><th>Account #</th><th>Rep</th><th>Rep Phone / Email</th><th>Dealer Phone</th><th>Vendor Email</th><th>Website</th><th>Actions</th></tr></thead><tbody>';
   for(var i=0;i<vendors.length;i++){
     var v=vendors[i];
     var repContact=[];
